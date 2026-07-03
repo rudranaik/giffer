@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const root = __dirname;
 const types = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.gif':'image/gif' };
-const PORT = 4599;
+const PORT = process.env.PORT || 4599;
 http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/') p = '/index.html';

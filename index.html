@@ -153,6 +153,47 @@
   a.dl { text-decoration: none; }
   .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; }
   .toast.show { opacity: 1; }
+  /* Recorder entry */
+  .or-sep { color: var(--muted); font-size: 12px; margin: 16px 0 12px; }
+  #dropzone #recordBtn { cursor: pointer; }
+  /* Recorder + review screens */
+  .rec-wrap, .review-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; flex: 1; min-height: 0; }
+  .rec-config { display: flex; flex-direction: column; gap: 16px; max-width: 540px; width: 100%; align-self: center; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-top: 10px; }
+  .rec-config h2 { margin: 0; font-size: 17px; }
+  .rec-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rec-settings label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 5px; }
+  .rec-settings label.chk { flex-direction: row; align-items: center; gap: 7px; font-size: 13px; color: var(--text); grid-column: 1 / -1; }
+  .rec-settings select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 7px 8px; font-size: 13px; font-family: inherit; }
+  .rec-actions { display: flex; gap: 10px; align-items: center; width: 100%; max-width: 720px; }
+  .rec-live { display: none; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+  .rec-stagebox { position: relative; max-width: 100%; border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.4); background: #000; line-height: 0; }
+  #recVideo { display: block; max-width: 100%; max-height: 56vh; }
+  .rec-badge { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,.65); color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 12px; font-variant-numeric: tabular-nums; display: none; align-items: center; gap: 7px; line-height: 1; }
+  .rec-badge.on { display: flex; }
+  .rec-badge .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: recpulse 1s infinite; }
+  @keyframes recpulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  .rec-count { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,.65); color: var(--muted); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-variant-numeric: tabular-nums; display: none; line-height: 1.3; }
+  .rec-count.on { display: block; }
+  .rec-countdown { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-size: 120px; font-weight: 800; color: #fff; text-shadow: 0 6px 24px rgba(0,0,0,.7); background: rgba(0,0,0,.28); }
+  .rec-countdown.on { display: flex; }
+  .review-stage { position: relative; line-height: 0; max-width: 100%; border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.4); align-self: center; }
+  #reviewCanvas { display: block; max-width: 100%; max-height: 52vh; }
+  .crop-overlay { position: absolute; inset: 0; }
+  .crop-rect { position: absolute; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); border: 1.5px solid var(--accent-2); cursor: move; box-sizing: border-box; }
+  .crop-rect.guide { box-shadow: none; border: 2px dashed var(--accent-2); }
+  .crop-rect.guide .crop-dims { top: 5px; left: 5px; }
+  .rec-badge, .rec-count { pointer-events: none; }
+  .guide-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; }
+  .guide-toggle .muted-note { color: var(--muted); }
+  .crop-h { position: absolute; width: 14px; height: 14px; background: var(--accent-2); border: 2px solid #05231a; border-radius: 3px; }
+  .crop-h.nw { left: -8px; top: -8px; cursor: nwse-resize; }
+  .crop-h.ne { right: -8px; top: -8px; cursor: nesw-resize; }
+  .crop-h.sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
+  .crop-h.se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+  .crop-dims { position: absolute; top: -24px; left: 0; background: var(--accent-2); color: #05231a; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; line-height: 1.4; }
+  .review-tools { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 720px; }
+  .preset-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .preset-row .btn { padding: 5px 11px; font-size: 12px; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #2c313c; border-radius: 6px; }
 </style>
@@ -174,6 +215,8 @@
       <div style="font-size:16px;color:var(--text)">Drop a GIF here, or click to browse</div>
       <div class="hint">Everything runs locally in your browser. Nothing is uploaded.</div>
       <input type="file" id="fileInput" accept="image/gif" hidden />
+      <div class="or-sep">— or —</div>
+      <button class="btn" id="recordBtn">🔴 Record your screen</button>
     </div>
 
     <div class="canvas-wrap" id="canvasWrap">
@@ -193,6 +236,93 @@
         <button class="btn primary block" id="addCap" disabled>＋ Add caption</button>
         <div class="cap-list" id="capList" style="margin-top:12px">
           <div class="empty-hint">No captions yet — click “Add caption”, then drag it on the preview to place it. Duplicate one with ⧉.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECORDER -->
+    <div class="rec-wrap" id="recordWrap">
+      <div class="rec-config" id="recConfig">
+        <h2>🔴 Record your screen</h2>
+        <div class="meta">Capture a screen, window, or browser tab. When you're done you'll <b>crop to the exact area</b> and trim the ends — so just record generously and clean it up after. Recorded at <b>full resolution</b>; choose the final file size later under <b>Export</b> (Scale &amp; Colors).</div>
+        <div class="rec-settings">
+          <label>Frame rate
+            <select id="recFps"><option value="8">8 fps</option><option value="12" selected>12 fps</option><option value="15">15 fps</option><option value="20">20 fps</option></select>
+          </label>
+          <label>Countdown before start
+            <select id="recDelay"><option value="0">Off</option><option value="3" selected>3 seconds</option><option value="5">5 seconds</option></select>
+          </label>
+          <label>Auto-stop
+            <select id="recMaxDur"><option value="0">Off</option><option value="15">After 15s</option><option value="30" selected>After 30s</option><option value="60">After 60s</option></select>
+          </label>
+          <label class="chk"><input type="checkbox" id="recCursor" checked> Capture mouse cursor</label>
+        </div>
+        <div class="rec-actions">
+          <button class="btn accent" id="recChoose">Choose screen →</button>
+          <button class="btn" id="recCancelCfg">Cancel</button>
+        </div>
+      </div>
+
+      <div class="rec-live" id="recLive">
+        <div class="rec-stagebox">
+          <video id="recVideo" autoplay playsinline muted></video>
+          <div class="crop-overlay" id="recCropOverlay" style="display:none">
+            <div class="crop-rect guide" id="recCropRect">
+              <div class="crop-dims" id="recCropDims"></div>
+              <div class="crop-h nw" data-c="nw"></div>
+              <div class="crop-h ne" data-c="ne"></div>
+              <div class="crop-h sw" data-c="sw"></div>
+              <div class="crop-h se" data-c="se"></div>
+            </div>
+          </div>
+          <div class="rec-badge" id="recBadge"><span class="pulse"></span> REC 0.0s</div>
+          <div class="rec-count" id="recCount"></div>
+          <div class="rec-countdown" id="recCountdown"></div>
+        </div>
+        <label class="guide-toggle"><input type="checkbox" id="recGuideOn"> Show crop guide — frame where you'll crop <span class="muted-note">(full screen is still recorded)</span></label>
+        <div class="rec-actions">
+          <button class="btn accent" id="recToggle">● Start recording</button>
+          <button class="btn" id="recCancelLive">Cancel</button>
+        </div>
+        <div class="meta">Space / Enter = start &amp; stop · Esc = cancel · or click “Stop sharing” in your browser's bar.</div>
+      </div>
+    </div>
+
+    <!-- REVIEW (crop + trim) -->
+    <div class="review-wrap" id="reviewWrap">
+      <div class="section-title" style="align-self:flex-start">Crop &amp; trim your recording</div>
+      <div class="review-stage">
+        <canvas id="reviewCanvas"></canvas>
+        <div class="crop-overlay" id="cropOverlay">
+          <div class="crop-rect" id="cropRect">
+            <div class="crop-dims" id="cropDims"></div>
+            <div class="crop-h nw" data-c="nw"></div>
+            <div class="crop-h ne" data-c="ne"></div>
+            <div class="crop-h sw" data-c="sw"></div>
+            <div class="crop-h se" data-c="se"></div>
+          </div>
+        </div>
+      </div>
+      <div class="review-tools">
+        <div class="preset-row">
+          <span class="swatch-lbl" style="flex:none">Crop shape:</span>
+          <button class="btn" data-preset="full">Full frame</button>
+          <button class="btn" data-preset="1">1:1</button>
+          <button class="btn" data-preset="1.777">16:9</button>
+          <button class="btn" data-preset="1.333">4:3</button>
+        </div>
+        <div class="transport">
+          <button class="play" id="rvPlay" title="Play / Pause">▶</button>
+          <input type="range" id="rvScrub" min="0" max="1000" value="0" />
+          <span class="time" id="rvTime">0.00s / 0.00s</span>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Trim start — <span id="trimInLbl">0.00s</span></label><input type="range" id="trimIn" min="0" max="1000" value="0"></div>
+          <div class="field"><label>Trim end — <span id="trimOutLbl">0.00s</span></label><input type="range" id="trimOut" min="0" max="1000" value="1000"></div>
+        </div>
+        <div class="rec-actions">
+          <button class="btn accent block" id="reviewUse">Use this recording →</button>
+          <button class="btn" id="reviewRetake">Retake</button>
         </div>
       </div>
     </div>
@@ -288,17 +418,24 @@ async function loadFile(file){
     if (!raw.length) throw new Error('No frames found');
     state.W = gif.lsd.width; state.H = gif.lsd.height;
     compositeFrames(raw);
-    setupPreview();
-    dropzone.style.display = 'none';
-    canvasWrap.style.display = 'flex';
-    newBtn.style.display = 'inline-block';
-    addCap.disabled = false; renderBtn.disabled = false;
-    gifMeta.textContent = `${state.W}×${state.H} · ${state.frames.length} frames · ${(state.duration/1000).toFixed(2)}s · ${fmtBytes(state.origBytes)}`;
+    enterEditor(`${state.W}×${state.H} · ${state.frames.length} frames · ${(state.duration/1000).toFixed(2)}s · ${fmtBytes(state.origBytes)}`);
     showToast('Loaded! Add a caption to begin.');
   } catch (err) {
     console.error(err);
     showToast('Could not read that GIF: ' + err.message);
   }
+}
+
+// Shared hand-off: whatever filled state.frames (a GIF or a recording), light up the editor.
+function enterEditor(metaText){
+  setupPreview();
+  dropzone.style.display = 'none';
+  recordWrap.style.display = 'none';
+  reviewWrap.style.display = 'none';
+  canvasWrap.style.display = 'flex';
+  newBtn.style.display = 'inline-block';
+  addCap.disabled = false; renderBtn.disabled = false;
+  gifMeta.textContent = metaText;
 }
 
 // Build full frames honoring disposal methods
@@ -702,9 +839,13 @@ async function renderGif(){
     const url = URL.createObjectURL(blob);
     const dl = $('#dlLink'); dl.href = url; dl.download = `${state.origName}-captioned.gif`;
     $('#outSize').textContent = fmtBytes(blob.size);
-    const delta = blob.size - state.origBytes;
-    const sign = delta >= 0 ? '+' : '−';
-    $('#origSize').textContent = `(was ${fmtBytes(state.origBytes)} · ${sign}${fmtBytes(Math.abs(delta))})`;
+    if (state.origBytes > 0){
+      const delta = blob.size - state.origBytes;
+      const sign = delta >= 0 ? '+' : '−';
+      $('#origSize').textContent = `(was ${fmtBytes(state.origBytes)} · ${sign}${fmtBytes(Math.abs(delta))})`;
+    } else {
+      $('#origSize').textContent = '';
+    }
     result.style.display = 'flex';
     progress.style.display = 'none';
     showToast('Done! Click Download.');
@@ -717,6 +858,351 @@ async function renderGif(){
     if (wasPlaying) play();
   }
 }
+
+// ---------- Screen recording ----------
+const recordBtn = $('#recordBtn');
+const recordWrap = $('#recordWrap'), reviewWrap = $('#reviewWrap');
+const recConfig = $('#recConfig'), recLive = $('#recLive');
+const recVideo = $('#recVideo'), recToggle = $('#recToggle');
+const recBadge = $('#recBadge'), recCount = $('#recCount'), recCountdown = $('#recCountdown');
+const capCanvas = document.createElement('canvas');
+const capCtx = capCanvas.getContext('2d', { willReadFrequently: true });
+const MAX_REC_FRAMES = 2000;   // hard safety cap so runaway captures can't exhaust memory
+
+let mediaStream = null, recLiveOn = false;
+const rec = { frames: [], grabbing: false, active: false, capW: 0, capH: 0, fps: 12,
+              lastGrab: 0, startPerf: 0, maxDurMs: 0, autoTimer: null, badgeTimer: null, fallback: null };
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function showScreen(which){
+  dropzone.style.display   = which === 'drop'   ? 'flex' : 'none';
+  recordWrap.style.display = which === 'record' ? 'flex' : 'none';
+  reviewWrap.style.display = which === 'review' ? 'flex' : 'none';
+  canvasWrap.style.display = which === 'editor' ? 'flex' : 'none';
+}
+
+recordBtn.addEventListener('click', e => { e.stopPropagation(); openRecorder(); });
+
+function openRecorder(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+    showToast('Screen recording isn’t supported in this browser.'); return;
+  }
+  recConfig.style.display = 'flex'; recLive.style.display = 'none';
+  recLiveOn = false;
+  showScreen('record');
+}
+
+$('#recCancelCfg').addEventListener('click', () => showScreen('drop'));
+$('#recChoose').addEventListener('click', chooseSurface);
+
+async function chooseSurface(){
+  const cursor = $('#recCursor').checked ? 'motion' : 'never';
+  try {
+    // Ask for the full native resolution so small crops stay sharp; the browser caps to the real surface size.
+    mediaStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 60, cursor, width: { ideal: 3840 }, height: { ideal: 2160 } },
+      audio: false
+    });
+  } catch (err){
+    if (err && err.name === 'NotAllowedError') showToast('Screen share was cancelled.');
+    else showToast('Could not start capture: ' + (err && err.message || err));
+    return;
+  }
+  recVideo.srcObject = mediaStream;
+  await recVideo.play().catch(() => {});
+  // If the user stops sharing from the browser's own bar, react accordingly.
+  mediaStream.getVideoTracks()[0].addEventListener('ended', () => { rec.active ? stopRecording(true) : cancelRecorder(); });
+  recConfig.style.display = 'none'; recLive.style.display = 'flex';
+  recToggle.textContent = '● Start recording';
+  recBadge.classList.remove('on'); recCount.classList.remove('on');
+  recLiveOn = true;
+}
+
+recToggle.addEventListener('click', () => { rec.active ? stopRecording(true) : startCountdownThenRecord(); });
+$('#recCancelLive').addEventListener('click', cancelRecorder);
+
+function stopStream(){
+  if (mediaStream){ mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  recVideo.srcObject = null;
+}
+
+function cancelRecorder(){
+  rec.active = false; rec.grabbing = false; recLiveOn = false;
+  clearTimeout(rec.autoTimer); clearInterval(rec.badgeTimer); clearInterval(rec.fallback);
+  recCountdown.classList.remove('on');
+  stopStream();
+  showScreen('drop');
+}
+
+async function startCountdownThenRecord(){
+  const cd = Number($('#recDelay').value);
+  if (cd > 0){
+    recCountdown.classList.add('on');
+    for (let n = cd; n > 0; n--){
+      recCountdown.textContent = n;
+      await sleep(1000);
+      if (!mediaStream) return;   // cancelled mid-countdown
+    }
+    recCountdown.classList.remove('on');
+  }
+  beginCapture();
+}
+
+function beginCapture(){
+  const track = mediaStream.getVideoTracks()[0];
+  const s = track.getSettings();
+  // Capture at full native resolution — no downscaling here. Final size is chosen at export.
+  const srcW = s.width || recVideo.videoWidth, srcH = s.height || recVideo.videoHeight;
+  rec.capW = Math.max(2, Math.round(srcW));
+  rec.capH = Math.max(2, Math.round(srcH));
+  rec.fps = Number($('#recFps').value);
+  rec.frames = []; rec.lastGrab = 0; rec.active = true; rec.grabbing = true;
+  rec.startPerf = performance.now();
+  rec.maxDurMs = Number($('#recMaxDur').value) * 1000;
+  capCanvas.width = rec.capW; capCanvas.height = rec.capH;
+
+  recToggle.textContent = '■ Stop';
+  recBadge.classList.add('on'); recCount.classList.add('on');
+  rec.badgeTimer = setInterval(updateRecBadge, 100);
+  if (rec.maxDurMs > 0) rec.autoTimer = setTimeout(() => stopRecording(true), rec.maxDurMs);
+
+  const provisional = Math.round(1000 / rec.fps);
+  const minInterval = provisional - 0.5;
+
+  const grab = tMs => {
+    capCtx.drawImage(recVideo, 0, 0, rec.capW, rec.capH);
+    const imageData = capCtx.getImageData(0, 0, rec.capW, rec.capH);
+    if (rec.frames.length) rec.frames[rec.frames.length - 1].delay = tMs - rec.lastGrab;
+    rec.frames.push({ imageData, delay: provisional });
+    rec.lastGrab = tMs;
+    if (rec.frames.length >= MAX_REC_FRAMES) stopRecording(true);
+  };
+
+  if (recVideo.requestVideoFrameCallback){
+    const onFrame = (now, meta) => {
+      if (!rec.grabbing) return;
+      const tMs = (meta && meta.mediaTime != null) ? meta.mediaTime * 1000 : (performance.now() - rec.startPerf);
+      if (rec.frames.length === 0 || (tMs - rec.lastGrab) >= minInterval) grab(tMs);
+      if (rec.grabbing) recVideo.requestVideoFrameCallback(onFrame);
+    };
+    recVideo.requestVideoFrameCallback(onFrame);
+  } else {
+    // Firefox fallback: no rVFC, so poll on a timer.
+    rec.fallback = setInterval(() => {
+      if (!rec.grabbing){ clearInterval(rec.fallback); return; }
+      grab(performance.now() - rec.startPerf);
+    }, provisional);
+  }
+}
+
+function updateRecBadge(){
+  const secs = (performance.now() - rec.startPerf) / 1000;
+  recBadge.innerHTML = `<span class="pulse"></span> REC ${secs.toFixed(1)}s`;
+  const bytes = rec.frames.length * rec.capW * rec.capH * 4;
+  recCount.textContent = `${rec.frames.length} frames · ~${fmtBytes(bytes)} in memory · ${rec.capW}×${rec.capH}`;
+}
+
+function stopRecording(keep){
+  if (!rec.active) return;
+  rec.active = false; rec.grabbing = false; recLiveOn = false;
+  clearTimeout(rec.autoTimer); clearInterval(rec.badgeTimer); clearInterval(rec.fallback);
+  recBadge.classList.remove('on'); recCount.classList.remove('on');
+  stopStream();
+  if (!keep || rec.frames.length === 0){ showScreen('drop'); return; }
+  const last = rec.frames[rec.frames.length - 1];
+  if (!last.delay) last.delay = Math.round(1000 / rec.fps);
+  enterReview();
+}
+
+// ---------- Review: crop + trim ----------
+const reviewCanvas = $('#reviewCanvas'), rvCtx = reviewCanvas.getContext('2d');
+const rvScrub = $('#rvScrub'), rvPlay = $('#rvPlay'), rvTime = $('#rvTime');
+const trimIn = $('#trimIn'), trimOut = $('#trimOut');
+const cropOverlay = $('#cropOverlay'), cropRect = $('#cropRect'), cropDims = $('#cropDims');
+
+const rv = { frames: [], starts: [], duration: 0, W: 0, H: 0,
+             crop: { x: 0, y: 0, w: 1, h: 1 }, inMs: 0, outMs: 0,
+             playing: false, raf: null, pStart: 0, pOff: 0 };
+
+function enterReview(){
+  rv.frames = rec.frames; rv.W = rec.capW; rv.H = rec.capH;
+  rv.starts = []; let t = 0;
+  for (const f of rv.frames){ rv.starts.push(t); t += (f.delay || Math.round(1000 / rec.fps)); }
+  rv.duration = t;
+  // Start from the live guide if the user framed one; otherwise full frame. Fully adjustable here either way.
+  rv.crop = recGuideOn.checked ? { ...recGuide.crop } : { x: 0, y: 0, w: 1, h: 1 };
+  rv.inMs = 0; rv.outMs = rv.duration;
+  reviewCanvas.width = rv.W; reviewCanvas.height = rv.H;
+  rvScrub.max = String(rv.duration); rvScrub.value = '0';
+  trimIn.max = trimOut.max = String(rv.duration);
+  trimIn.value = '0'; trimOut.value = String(rv.duration);
+  rvPlay.textContent = '▶';
+  layoutCrop(); rvDrawAt(0); updateTrimLabels();
+  showScreen('review');
+}
+
+function rvFrameIndexAt(ms){
+  const s = rv.starts; let lo = 0, hi = s.length - 1, ans = 0;
+  const m = Math.max(0, Math.min(ms, rv.duration - 1));
+  while (lo <= hi){ const mid = (lo + hi) >> 1; if (s[mid] <= m){ ans = mid; lo = mid + 1; } else hi = mid - 1; }
+  return ans;
+}
+function rvDrawAt(ms){
+  if (!rv.frames.length) return;
+  rvCtx.putImageData(rv.frames[rvFrameIndexAt(ms)].imageData, 0, 0);
+  rvScrub.value = String(Math.round(ms));
+  rvTime.textContent = `${(ms/1000).toFixed(2)}s / ${(rv.duration/1000).toFixed(2)}s`;
+}
+function rvLoop(now){
+  if (!rv.playing) return;
+  let e = now - rv.pStart + rv.pOff;
+  if (e >= rv.outMs){ e = rv.inMs; rv.pStart = now; rv.pOff = rv.inMs; }   // loop within the trim window
+  rvDrawAt(e);
+  rv.raf = requestAnimationFrame(rvLoop);
+}
+function rvPlayToggle(){
+  if (rv.playing){ rv.playing = false; rvPlay.textContent = '▶'; cancelAnimationFrame(rv.raf); rv.pOff = Number(rvScrub.value); }
+  else {
+    rv.playing = true; rvPlay.textContent = '⏸';
+    let start = Number(rvScrub.value); if (start < rv.inMs || start >= rv.outMs) start = rv.inMs;
+    rv.pOff = start; rv.pStart = performance.now(); rv.raf = requestAnimationFrame(rvLoop);
+  }
+}
+rvPlay.addEventListener('click', rvPlayToggle);
+rvScrub.addEventListener('input', () => { if (rv.playing) rvPlayToggle(); rvDrawAt(Number(rvScrub.value)); });
+
+function updateTrimLabels(){
+  rv.inMs = Number(trimIn.value); rv.outMs = Number(trimOut.value);
+  $('#trimInLbl').textContent = (rv.inMs/1000).toFixed(2) + 's';
+  $('#trimOutLbl').textContent = (rv.outMs/1000).toFixed(2) + 's';
+}
+trimIn.addEventListener('input', () => {
+  let a = Number(trimIn.value); if (a > Number(trimOut.value) - 100){ a = Number(trimOut.value) - 100; trimIn.value = a; }
+  updateTrimLabels(); rvDrawAt(a);
+});
+trimOut.addEventListener('input', () => {
+  let b = Number(trimOut.value); if (b < Number(trimIn.value) + 100){ b = Number(trimIn.value) + 100; trimOut.value = b; }
+  updateTrimLabels(); rvDrawAt(b);
+});
+
+// Crop rectangle (normalized 0..1 over the recorded frame)
+function layoutCrop(){
+  cropRect.style.left   = (rv.crop.x * 100) + '%';
+  cropRect.style.top    = (rv.crop.y * 100) + '%';
+  cropRect.style.width  = (rv.crop.w * 100) + '%';
+  cropRect.style.height = (rv.crop.h * 100) + '%';
+  cropDims.textContent = `${Math.round(rv.crop.w * rv.W)} × ${Math.round(rv.crop.h * rv.H)}`;
+}
+function setPreset(ratio){
+  if (ratio === 'full'){ rv.crop = { x: 0, y: 0, w: 1, h: 1 }; layoutCrop(); return; }
+  const frameRatio = rv.W / rv.H;
+  let w, h;
+  if (ratio > frameRatio){ w = 1; h = frameRatio / ratio; } else { h = 1; w = ratio / frameRatio; }
+  w *= 0.9; h *= 0.9;
+  rv.crop = { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
+  layoutCrop();
+}
+reviewWrap.querySelectorAll('[data-preset]').forEach(b =>
+  b.addEventListener('click', () => { const v = b.dataset.preset; setPreset(v === 'full' ? 'full' : Number(v)); }));
+
+// Shared crop-rectangle dragging (used by the review crop and the live recording guide).
+function attachCropDrag(overlay, rectEl, ref, onChange){
+  let drag = null;
+  const pt = e => { const r = overlay.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }; };
+  rectEl.addEventListener('pointerdown', e => {
+    if (e.target.classList.contains('crop-h')) return;
+    e.preventDefault();
+    const p = pt(e);
+    drag = { mode: 'move', sx: p.x, sy: p.y, orig: { ...ref.crop } };
+    overlay.setPointerCapture(e.pointerId);
+  });
+  rectEl.querySelectorAll('.crop-h').forEach(h => h.addEventListener('pointerdown', e => {
+    e.preventDefault(); e.stopPropagation();
+    const p = pt(e);
+    drag = { mode: 'resize', corner: h.dataset.c, sx: p.x, sy: p.y, orig: { ...ref.crop } };
+    overlay.setPointerCapture(e.pointerId);
+  }));
+  overlay.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = pt(e), o = drag.orig, dx = p.x - drag.sx, dy = p.y - drag.sy;
+    if (drag.mode === 'move'){
+      ref.crop.x = Math.max(0, Math.min(o.x + dx, 1 - o.w));
+      ref.crop.y = Math.max(0, Math.min(o.y + dy, 1 - o.h));
+    } else {
+      const c = drag.corner;
+      if (c.includes('w')){ const nx = Math.max(0, Math.min(o.x + dx, o.x + o.w - 0.05)); ref.crop.x = nx; ref.crop.w = o.x + o.w - nx; }
+      if (c.includes('e')){ ref.crop.w = Math.max(0.05, Math.min(o.w + dx, 1 - o.x)); }
+      if (c.includes('n')){ const ny = Math.max(0, Math.min(o.y + dy, o.y + o.h - 0.05)); ref.crop.y = ny; ref.crop.h = o.y + o.h - ny; }
+      if (c.includes('s')){ ref.crop.h = Math.max(0.05, Math.min(o.h + dy, 1 - o.y)); }
+    }
+    onChange();
+  });
+  overlay.addEventListener('pointerup', () => { drag = null; });
+}
+attachCropDrag(cropOverlay, cropRect, rv, layoutCrop);
+
+// ---------- Live crop guide (non-destructive: full frame is always recorded) ----------
+const recGuideOn = $('#recGuideOn'), recCropOverlay = $('#recCropOverlay'), recCropRect = $('#recCropRect'), recCropDims = $('#recCropDims');
+const recGuide = { crop: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 } };
+function guideCaptureDims(){
+  // Full native resolution — the guide reports the true cropped pixel size.
+  return { W: recVideo.videoWidth || 1280, H: recVideo.videoHeight || 720 };
+}
+function layoutRecCrop(){
+  recCropRect.style.left   = (recGuide.crop.x * 100) + '%';
+  recCropRect.style.top    = (recGuide.crop.y * 100) + '%';
+  recCropRect.style.width  = (recGuide.crop.w * 100) + '%';
+  recCropRect.style.height = (recGuide.crop.h * 100) + '%';
+  const d = guideCaptureDims();
+  recCropDims.textContent = `${Math.round(recGuide.crop.w * d.W)} × ${Math.round(recGuide.crop.h * d.H)}`;
+}
+recGuideOn.addEventListener('change', () => {
+  recCropOverlay.style.display = recGuideOn.checked ? 'block' : 'none';
+  if (recGuideOn.checked) layoutRecCrop();
+});
+attachCropDrag(recCropOverlay, recCropRect, recGuide, layoutRecCrop);
+
+$('#reviewRetake').addEventListener('click', () => { rv.frames = []; rec.frames = []; openRecorder(); });
+$('#reviewUse').addEventListener('click', applyRecording);
+
+function applyRecording(){
+  if (rv.playing) rvPlayToggle();
+  const sx = Math.round(rv.crop.x * rv.W), sy = Math.round(rv.crop.y * rv.H);
+  const sw = Math.max(1, Math.round(rv.crop.w * rv.W)), sh = Math.max(1, Math.round(rv.crop.h * rv.H));
+  const inIdx = rvFrameIndexAt(rv.inMs), outIdx = rvFrameIndexAt(Math.max(rv.inMs, rv.outMs - 1));
+
+  const tmp = document.createElement('canvas'); tmp.width = rv.W; tmp.height = rv.H;
+  const tctx = tmp.getContext('2d');
+  const dst = document.createElement('canvas'); dst.width = sw; dst.height = sh;
+  const dctx = dst.getContext('2d', { willReadFrequently: true });
+
+  const outFrames = [];
+  for (let i = inIdx; i <= outIdx; i++){
+    tctx.putImageData(rv.frames[i].imageData, 0, 0);
+    dctx.clearRect(0, 0, sw, sh);
+    dctx.drawImage(tmp, sx, sy, sw, sh, 0, 0, sw, sh);
+    outFrames.push({ imageData: dctx.getImageData(0, 0, sw, sh), delay: rv.frames[i].delay || Math.round(1000 / rec.fps) });
+  }
+
+  state.W = sw; state.H = sh; state.frames = outFrames;
+  state.starts = []; let t = 0;
+  for (const f of outFrames){ state.starts.push(t); t += f.delay; }
+  state.duration = t; state.captions = []; state.origBytes = 0; state.origName = 'recording';
+  rv.frames = []; rec.frames = [];   // free the uncropped footage
+
+  renderCapList(); renderTimeline();
+  enterEditor(`${sw}×${sh} · ${outFrames.length} frames · ${(t/1000).toFixed(2)}s · recorded`);
+  showToast('Recording ready — add a caption!');
+}
+
+// Keyboard shortcuts while the live recorder is up
+document.addEventListener('keydown', e => {
+  if (!recLiveOn) return;
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Escape'){ e.preventDefault(); cancelRecorder(); }
+  else if (e.code === 'Space' || e.code === 'Enter'){ e.preventDefault(); recToggle.click(); }
+});
 
 // ---------- Utils ----------
 function fmtBytes(b){ if (b < 1024) return b + ' B'; if (b < 1048576) return (b/1024).toFixed(1) + ' KB'; return (b/1048576).toFixed(2) + ' MB'; }
