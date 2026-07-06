@@ -23,10 +23,16 @@ The app loads two small encoding libraries as ES modules, so it needs to be serv
 
 ```bash
 node serve.js        # then open http://localhost:4599
-# or:  python3 -m http.server 4599
+# or:  python3 -m http.server 4599 --directory public
 ```
 
 > First launch needs internet once to fetch the two libraries ([gifuct-js](https://github.com/matt-way/gifuct-js) + [gifenc](https://github.com/mattdesl/gifenc)); the browser caches them afterward.
+
+## Deploying (Cloudflare)
+
+The app is fully static (everything in `public/`), deployed as a Cloudflare Worker with static assets at **giffer.nrudra.in**.
+
+Flow: this repo is the source of truth → a fork on a second GitHub account syncs from it periodically (via that account's scheduled Actions) → Cloudflare's git integration (Workers Builds) is connected to the fork and runs `npx wrangler deploy` on each sync. [wrangler.jsonc](wrangler.jsonc) drives that deploy: it sets the assets directory (`public/`) and the custom domain. No deploy secrets or workflows live in this repo.
 
 ## Tech
 

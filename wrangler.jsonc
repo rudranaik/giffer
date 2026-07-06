@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "giffer",
+  "compatibility_date": "2026-07-06",
+  "assets": {
+    "directory": "./public"
+  },
+  // The nrudra.in zone must be in the Cloudflare account. Wrangler creates
+  // the DNS record for this subdomain automatically on deploy.
+  "routes": [
+    { "pattern": "giffer.nrudra.in", "custom_domain": true }
+  ]
+}

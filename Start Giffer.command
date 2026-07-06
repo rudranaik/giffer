@@ -6,5 +6,5 @@ if command -v node >/dev/null 2>&1; then
   node serve.js
 else
   echo "Node.js not found — falling back to Python."
-  python3 -m http.server 4599
+  python3 -m http.server 4599 --directory public
 fi

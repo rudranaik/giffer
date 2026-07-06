@@ -2,7 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const root = __dirname;
+const root = path.join(__dirname, 'public');
 const types = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.gif':'image/gif' };
 const PORT = process.env.PORT || 4599;
 http.createServer((req, res) => {
