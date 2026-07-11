@@ -129,7 +129,9 @@
   .tl-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
   .tl-label { width: 84px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
   .tl-track { position: relative; flex: 1; height: 20px; background: #efe9f7; border-radius: 6px; overflow: hidden; }
-  .tl-bar { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg,var(--accent),#ff5d8f); border-radius: 6px; opacity: .9; }
+  .tl-bar { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg,var(--accent),#ff5d8f); border-radius: 6px; opacity: .9; cursor: grab; }
+  .tl-h { position: absolute; top: 2px; bottom: 2px; width: 7px; border-radius: 4px; background: rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(43,36,56,.18); cursor: ew-resize; z-index: 2; }
+  .tl-h.start { left: 2px; } .tl-h.end { right: 2px; }
   .tl-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--pop); }
   /* Sidebar */
   .section-title {
@@ -150,12 +152,6 @@
   .btn.block { width: 100%; }
   .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
   .cap-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-  .clip-actions { display: flex; gap: 8px; }
-  .clip-card { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-  .clip-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
-  .clip-head .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .clip-head .del { color: var(--muted); border: none; background: none; cursor: pointer; font-size: 15px; }
-  .clip-head .del:hover { color: var(--danger); }
   .cap-card { border: 1px solid var(--border); border-radius: 12px; background: #fff; overflow: hidden; box-shadow: 0 2px 8px rgba(43,36,56,.05); }
   .cap-head {
     display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer;
@@ -174,6 +170,9 @@
   .cap-body { padding: 10px; display: none; flex-direction: column; gap: 8px; }
   .cap-card.open .cap-body { display: flex; }
   .cap-card.open .cap-head { border-bottom: 1px solid var(--border); }
+  .asset-row { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px dashed #d8c9f2; border-radius: 9px; background: #faf7fd; }
+  .asset-row .asset-name { flex: 1; min-width: 0; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asset-row input[type=file] { display: none; }
   /* Dual-handle timing slider */
   .ds { position: relative; height: 26px; touch-action: none; }
   .ds-track { position: absolute; left: 0; right: 0; top: 11px; height: 5px; border-radius: 3px; background: #efe9f7; }
@@ -226,12 +225,18 @@
   #dropzone #recordBtn { cursor: pointer; }
   /* Recorder + review screens */
   .rec-wrap, .review-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; flex: 1; min-height: 0; }
-  .rec-config { display: flex; flex-direction: column; gap: 16px; max-width: 540px; width: 100%; align-self: center; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-top: 10px; box-shadow: 0 10px 30px rgba(124,77,255,.1); }
+  .rec-config { display: flex; flex-direction: column; gap: 14px; max-width: 540px; width: 100%; align-self: center; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-top: 10px; box-shadow: 0 10px 30px rgba(124,77,255,.1); }
   .rec-config h2 { margin: 0; font-size: 17px; font-family: 'Fredoka', sans-serif; font-weight: 600; }
   .rec-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .rec-settings label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 5px; }
   .rec-settings label.chk { flex-direction: row; align-items: center; gap: 7px; font-size: 13px; color: var(--text); grid-column: 1 / -1; }
   .rec-settings select { background: #fff; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 8px; font-size: 13px; font-family: inherit; }
+  details.options { border: 1px solid var(--border); border-radius: 10px; background: #faf7fd; }
+  details.options > summary { cursor: pointer; list-style: none; padding: 9px 11px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  details.options > summary::-webkit-details-marker { display: none; }
+  details.options > summary::before { content: '›'; display: inline-block; margin-right: 7px; color: var(--accent); transition: transform .15s; }
+  details.options[open] > summary::before { transform: rotate(90deg); }
+  details.options > .options-body { padding: 0 11px 11px; }
   .rec-actions { display: flex; gap: 10px; align-items: center; width: 100%; max-width: 720px; }
   .rec-live { display: none; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
   .rec-processing { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; flex: 1; width: 100%; }
@@ -243,8 +248,9 @@
   @keyframes recpulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
   .rec-count { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,.65); color: var(--muted); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-variant-numeric: tabular-nums; display: none; line-height: 1.3; }
   .rec-count.on { display: block; }
-  .rec-countdown { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-size: 120px; font-weight: 800; color: #fff; text-shadow: 0 6px 24px rgba(0,0,0,.7); background: rgba(0,0,0,.28); }
+  .rec-countdown { position: absolute; inset: 0; display: none; flex-direction:column; align-items: center; justify-content: center; font-size: 120px; font-weight: 800; color: #fff; text-shadow: 0 6px 24px rgba(0,0,0,.7); background: rgba(0,0,0,.28); }
   .rec-countdown.on { display: flex; }
+  .rec-countdown small { font-size:13px; padding:6px 12px; border-radius:999px; background:rgba(20,12,32,.78); text-shadow:none; }
   /* "Preview only" state before recording starts */
   .rec-standby { position: absolute; inset: 0; display: none; align-items: flex-start; justify-content: center; padding-top: 14px; pointer-events: none; }
   .rec-standby.on { display: flex; }
@@ -268,6 +274,8 @@
   .crop-h.se { right: -8px; bottom: -8px; cursor: nwse-resize; }
   .crop-dims { position: absolute; top: -24px; left: 0; background: var(--accent-2); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; line-height: 1.4; }
   .stage-inner { position: relative; line-height: 0; transform-origin: 0 0; transition: transform .4s cubic-bezier(.22,.61,.36,1); }
+  #pathCanvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+  #cropOverlay { z-index: 3; }
   .mode-row { display: flex; gap: 8px; }
   .mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .camera-rec-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
@@ -285,6 +293,8 @@
     border: 1px solid var(--border); border-radius: 8px; max-width: 320px; max-height: 200px;
   }
   .review-tools { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 720px; }
+  .review-primary { position: sticky; bottom: 0; z-index: 5; padding: 8px; margin: 0 -8px; background: linear-gradient(transparent, var(--bg) 30%); }
+  .trim-control { padding: 8px 10px 2px; border: 1px solid var(--border); border-radius: 10px; background: #faf7fd; }
   .preset-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .preset-row .btn { padding: 5px 11px; font-size: 12px; }
   @media (max-width: 700px) {
@@ -312,9 +322,10 @@
   <div class="stage">
     <div id="dropzone">
       <div class="big">📥</div>
-      <div style="font-size:16px;color:var(--text)">Drop a GIF here, or click to browse</div>
+      <div style="font-size:16px;color:var(--text)">Create from an existing GIF</div>
       <div class="hint">Everything runs locally in your browser. Nothing is uploaded.</div>
       <input type="file" id="fileInput" accept="image/gif" hidden />
+      <button class="btn primary" id="uploadBtn" style="margin-top:14px">📁 Upload a GIF</button>
       <div class="or-sep">— or —</div>
       <button class="btn" id="recordBtn">🔴 Record your screen</button>
     </div>
@@ -346,30 +357,41 @@
           <div class="empty-hint">No captions yet — click “Add caption”, then drag it on the preview to place it. Duplicate one with ⧉.</div>
         </div>
       </div>
+
+      <div class="captions-panel">
+        <div class="section-title">Watermarks</div>
+        <input type="file" id="watermarkInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        <button class="btn primary block" id="addWatermark" disabled>＋ Upload watermark</button>
+        <div class="cap-list" id="watermarkList" style="margin-top:12px">
+          <div class="empty-hint">Overlay a logo or image throughout the finished GIF.</div>
+        </div>
+      </div>
     </div>
 
     <!-- RECORDER -->
     <div class="rec-wrap" id="recordWrap">
       <div class="rec-config" id="recConfig">
         <h2>🔴 Record your screen</h2>
-        <div class="meta">Capture a screen, window, or browser tab. When you're done you'll <b>crop to the exact area</b> and trim the ends — so just record generously and clean it up after. Recorded at <b>full resolution</b>; choose the final file size later under <b>Export</b> (Scale &amp; Colors).</div>
-        <div class="meta">You can freely <b>switch tabs and apps</b> while recording — whatever you chose keeps being captured, and a small <b>floating controller</b> (Chrome / Edge) lets you pause or stop from anywhere. It's not part of the shared tab, and if you share the whole screen you can crop it out afterwards.</div>
-        <div class="rec-settings">
-          <label>Frame rate
-            <select id="recFps"><option value="8">8 fps</option><option value="12" selected>12 fps</option><option value="15">15 fps</option><option value="20">20 fps</option></select>
-          </label>
-          <label>Countdown before start
-            <select id="recDelay"><option value="0">Off</option><option value="3" selected>3 seconds</option><option value="5">5 seconds</option></select>
-          </label>
-          <label>Auto-stop
-            <select id="recMaxDur"><option value="0">Off</option><option value="15">After 15s</option><option value="30" selected>After 30s</option><option value="60">After 60s</option></select>
-          </label>
-          <label class="chk"><input type="checkbox" id="recCursor" checked> Capture mouse cursor</label>
-        </div>
+        <div class="meta">Choose a screen, window, or tab. Record generously — you can crop and trim it next.</div>
         <div class="rec-actions">
           <button class="btn accent" id="recChoose">Choose screen →</button>
           <button class="btn" id="recCancelCfg">Cancel</button>
         </div>
+        <details class="options">
+          <summary>Recording options</summary>
+          <div class="options-body rec-settings">
+            <label>Frame rate
+              <select id="recFps"><option value="8">8 fps</option><option value="12" selected>12 fps</option><option value="15">15 fps</option><option value="20">20 fps</option></select>
+            </label>
+            <label>Countdown
+              <select id="recDelay"><option value="0">Off</option><option value="3" selected>3 seconds</option><option value="5">5 seconds</option></select>
+            </label>
+            <label>Auto-stop
+              <select id="recMaxDur"><option value="0">Off</option><option value="15">After 15s</option><option value="30" selected>After 30s</option><option value="60">After 60s</option></select>
+            </label>
+            <label class="chk"><input type="checkbox" id="recCursor" checked> Capture mouse cursor</label>
+          </div>
+        </details>
       </div>
 
       <div class="rec-live" id="recLive">
@@ -421,6 +443,7 @@
               <div class="crop-h se" data-c="se"></div>
             </div>
           </div>
+          <canvas id="pathCanvas"></canvas>
         </div>
       </div>
       <div class="review-tools">
@@ -429,43 +452,55 @@
           <button class="btn mode-btn" data-mode="camera">🎥 Moving window</button>
         </div>
         <div id="staticControls">
-          <div class="preset-row">
+          <details class="options">
+            <summary>Crop presets</summary>
+            <div class="options-body preset-row">
             <span class="swatch-lbl" style="flex:none">Crop shape:</span>
             <button class="btn" data-preset="full">Full frame</button>
             <button class="btn" data-preset="1">1:1</button>
             <button class="btn" data-preset="1.777">16:9</button>
             <button class="btn" data-preset="1.333">4:3</button>
             <button class="btn" id="resetCropBtn" style="margin-left:auto" title="Back to the full screen to start over">⟲ Reset &amp; redraw</button>
-          </div>
+            </div>
+          </details>
         </div>
         <div id="cameraControls" style="display:none">
-          <div class="preset-row">
+          <div class="camera-rec-row">
+            <button class="btn accent" id="pathRecBtn">● Record camera path</button>
+            <span class="meta" id="pathStatus">Position the window, then record its motion while the clip plays.</span>
+          </div>
+          <details class="options">
+            <summary>Window shape &amp; output preview</summary>
+            <div class="options-body">
+              <div class="preset-row">
             <span class="swatch-lbl" style="flex:none">Window shape:</span>
             <button class="btn" data-aspect="1.777">16:9</button>
             <button class="btn" data-aspect="1">1:1</button>
             <button class="btn" data-aspect="1.333">4:3</button>
             <button class="btn" data-aspect="0.5625">9:16</button>
             <span class="meta">…or drag the corners to draw any size.</span>
-          </div>
-          <div class="camera-rec-row">
-            <button class="btn accent" id="pathRecBtn">● Record camera path</button>
-            <span class="meta" id="pathStatus">Position the window, then record its motion while the clip plays.</span>
-          </div>
-          <div class="out-preview-wrap" id="outPreviewWrap">
+              </div>
+              <div class="out-preview-wrap" id="outPreviewWrap">
             <span class="swatch-lbl" style="flex:none">GIF output preview:</span>
             <canvas id="outPreview"></canvas>
-          </div>
+              </div>
+            </div>
+          </details>
         </div>
         <div class="transport">
           <button class="play" id="rvPlay" title="Play / Pause">▶</button>
           <input type="range" id="rvScrub" min="0" max="1000" value="0" />
           <span class="time" id="rvTime">0.00s / 0.00s</span>
         </div>
-        <div class="row2">
-          <div class="field"><label>Trim start — <span id="trimInLbl">0.00s</span></label><input type="range" id="trimIn" min="0" max="1000" value="0"></div>
-          <div class="field"><label>Trim end — <span id="trimOutLbl">0.00s</span></label><input type="range" id="trimOut" min="0" max="1000" value="1000"></div>
+        <div class="trim-control">
+          <div class="field"><label>Keep <span id="trimInLbl">0.00s</span> → <span id="trimOutLbl">0.00s</span></label></div>
+          <div class="ds" id="trimRange">
+            <div class="ds-track"></div><div class="ds-seg"></div><div class="ds-h start"></div><div class="ds-h end"></div>
+          </div>
+          <input type="range" id="trimIn" min="0" max="1000" value="0" hidden>
+          <input type="range" id="trimOut" min="0" max="1000" value="1000" hidden>
         </div>
-        <div class="rec-actions">
+        <div class="rec-actions review-primary">
           <button class="btn accent block" id="reviewUse">Use this recording →</button>
           <button class="btn" id="reviewRetake">Retake</button>
         </div>
@@ -529,22 +564,26 @@ const state = {
   duration: 0,         // total ms
   captions: [],
   cards: [],
+  watermarks: [],
   origBytes: 0,
   origName: 'caption',
 };
 let capSeq = 0;
 let cardSeq = 0;
+let watermarkSeq = 0;
 
-const FONTS = ['Anton','Impact','Bangers','Oswald','Pacifico','Roboto','Arial','Georgia','Courier New','Comic Sans MS','Verdana'];
+const FONTS = ['Fredoka','Anton','Impact','Bangers','Oswald','Pacifico','Roboto','Arial','Georgia','Courier New','Comic Sans MS','Verdana'];
 
 // ---------- Elements ----------
 const $ = s => document.querySelector(s);
 const dropzone = $('#dropzone'), fileInput = $('#fileInput');
+const uploadBtn = $('#uploadBtn');
 const canvasWrap = $('#canvasWrap'), view = $('#view'), vctx = view.getContext('2d');
 const playBtn = $('#playBtn'), scrub = $('#scrub'), timeLbl = $('#timeLbl');
 const timeline = $('#timeline'), gifMeta = $('#gifMeta');
 const addCap = $('#addCap'), capList = $('#capList');
 const addCard = $('#addCard'), cardList = $('#cardList');
+const addWatermark = $('#addWatermark'), watermarkInput = $('#watermarkInput'), watermarkList = $('#watermarkList');
 const renderBtn = $('#renderBtn'), newBtn = $('#newBtn'), backToReviewBtn = $('#backToReviewBtn');
 const toast = $('#toast');
 
@@ -553,7 +592,8 @@ let toastT;
 function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>toast.classList.remove('show'), 2600); }
 
 // ---------- File loading ----------
-dropzone.addEventListener('click', ()=> fileInput.click());
+dropzone.addEventListener('click', e => { if (!e.target.closest('button')) fileInput.click(); });
+uploadBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
 ['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
 ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
@@ -591,7 +631,7 @@ function enterEditor(metaText){
   newBtn.style.display = 'inline-block';
   // Recordings retain their source footage, so offer a way back to re-crop / re-adjust the window.
   backToReviewBtn.style.display = rv.frames.length ? 'inline-block' : 'none';
-  addCap.disabled = false; addCard.disabled = false; renderBtn.disabled = false;
+  addCap.disabled = false; addCard.disabled = false; addWatermark.disabled = false; renderBtn.disabled = false;
   gifMeta.textContent = metaText;
 }
 
@@ -637,7 +677,8 @@ function drawAt(ms){
   const idx = frameIndexAt(ms);
   vctx.putImageData(state.frames[idx].imageData, 0, 0);
   const t = ((ms % state.duration) + state.duration) % state.duration;
-  for (const cap of state.captions) drawCaption(vctx, cap, t, state.W, state.H, 1);
+  if (!state.frames[idx].cardId) for (const cap of state.captions) drawCaption(vctx, cap, t, state.W, state.H, 1);
+  for(const wm of state.watermarks)drawWatermark(vctx,wm,state.W,state.H);
   scrub.value = String(Math.round(t));
   timeLbl.textContent = `${(t/1000).toFixed(2)}s / ${(state.duration/1000).toFixed(2)}s`;
   movePlayheads(t);
@@ -665,12 +706,29 @@ function cardImageData(card){
   const c = document.createElement('canvas'); c.width = state.W; c.height = state.H;
   const ctx = c.getContext('2d');
   ctx.fillStyle = card.bg; ctx.fillRect(0, 0, c.width, c.height);
-  const size = Math.max(18, Math.round(state.H * 0.12));
-  ctx.font = `600 ${size}px 'Fredoka', sans-serif`;
-  ctx.fillStyle = card.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const lines = wrapLines(ctx, card.text || '', state.W * 0.82);
-  const lineH = size * 1.18, y0 = state.H / 2 - (lines.length - 1) * lineH / 2;
-  lines.forEach((line, i) => ctx.fillText(line, state.W / 2, y0 + i * lineH));
+  if (card.asset?.image){
+    const a = card.asset, img = a.image;
+    const w = state.W * a.scale, h = w * (img.naturalHeight / img.naturalWidth);
+    ctx.save(); ctx.globalAlpha = a.opacity;
+    ctx.drawImage(img, a.x * state.W - w/2, a.y * state.H - h/2, w, h);
+    ctx.restore();
+  }
+  let text = card.upper ? card.text.toUpperCase() : card.text;
+  if (text.trim()){
+    const size = card.size;
+    ctx.font = `${size}px '${card.font}', sans-serif`;
+    ctx.fillStyle = card.color; ctx.strokeStyle = card.stroke; ctx.lineWidth = card.strokeW * 2;
+    ctx.lineJoin = 'round'; ctx.miterLimit = 2; ctx.textAlign = card.align; ctx.textBaseline = 'middle';
+    const lines = wrapLines(ctx, text, state.W * 0.84);
+    const lineH = size * 1.18, y0 = card.y * state.H - (lines.length - 1) * lineH / 2;
+    let x = card.x * state.W;
+    if (card.align === 'left') x = state.W * 0.08;
+    if (card.align === 'right') x = state.W * 0.92;
+    lines.forEach((line, i) => {
+      if (card.strokeW > 0) ctx.strokeText(line, x, y0 + i * lineH);
+      ctx.fillText(line, x, y0 + i * lineH);
+    });
+  }
   return ctx.getImageData(0, 0, state.W, state.H);
 }
 function cardFrameIndex(id){ return state.frames.findIndex(f => f.cardId === id); }
@@ -687,14 +745,30 @@ function addTitleCard(){
   const at = Number(scrub.value);
   let index = state.starts.findIndex(t => t >= at);
   if (index < 0) index = state.frames.length;
-  const card = { id: ++cardSeq, text: 'Up next…', duration: 1500, bg: '#2b2438', color: '#ffffff' };
+  const card = {
+    id: ++cardSeq, text: 'Up next…', duration: 1500, bg: '#2b2438',
+    font: 'Fredoka', size: Math.max(18, Math.round(state.H * 0.12)), color: '#ffffff',
+    stroke: '#000000', strokeW: 0, align: 'center', upper: false, x: 0.5, y: 0.62,
+    asset: null
+  };
   shiftCaptions(at, card.duration);
   state.cards.push(card);
   state.frames.splice(index, 0, { cardId: card.id, imageData: cardImageData(card), delay: card.duration });
   rebuildTiming(); renderCardList(); renderCapList(); renderTimeline();
   playOffset = at; drawAt(at);
-  cardList.querySelector(`[data-card-id="${card.id}"] input[type=text]`)?.focus();
+  const added = cardList.querySelector(`[data-card-id="${card.id}"]`);
+  added?.classList.add('open'); added?.querySelector('textarea')?.focus();
   showToast('Title card added at the playhead');
+}
+function moveTitleCard(card, wantedStart){
+  const i = cardFrameIndex(card.id); if (i < 0) return;
+  const oldStart = state.starts[i], duration = card.duration;
+  const frame = state.frames.splice(i, 1)[0];
+  shiftCaptions(oldStart + duration, -duration); rebuildTiming();
+  const target = Math.max(0, Math.min(wantedStart, state.duration));
+  let next = state.starts.findIndex(t => t >= target); if (next < 0) next = state.frames.length;
+  const snapped = next < state.starts.length ? state.starts[next] : state.duration;
+  shiftCaptions(snapped, duration); state.frames.splice(next, 0, frame); rebuildTiming();
 }
 function removeTitleCard(card){
   pause();
@@ -709,29 +783,98 @@ function renderCardList(){
   if (!state.cards.length){ cardList.innerHTML = '<div class="empty-hint">Add a title card to introduce the next part of your GIF.</div>'; return; }
   cardList.innerHTML = '';
   [...state.cards].sort((a,b) => cardStart(a) - cardStart(b)).forEach(card => {
-    const el = document.createElement('div'); el.className = 'clip-card'; el.dataset.cardId = card.id;
-    el.innerHTML = `<div class="clip-head"><span>▣</span><span class="name">${escapeHtml(card.text || '(blank card)')}</span><span class="meta">${(cardStart(card)/1000).toFixed(2)}s</span><button class="del" title="Delete title card">✕</button></div>
-      <div class="field"><label>Announcement</label><input type="text" data-card-k="text" value="${escapeHtml(card.text)}"></div>
-      <div class="row3">
-        <div class="field"><label>Duration</label><select data-card-k="duration"><option value="1000" ${card.duration===1000?'selected':''}>1 sec</option><option value="1500" ${card.duration===1500?'selected':''}>1.5 sec</option><option value="2000" ${card.duration===2000?'selected':''}>2 sec</option><option value="3000" ${card.duration===3000?'selected':''}>3 sec</option><option value="5000" ${card.duration===5000?'selected':''}>5 sec</option></select></div>
-        <div class="field"><label>Background</label><input type="color" data-card-k="bg" value="${card.bg}"></div>
-        <div class="field"><label>Text</label><input type="color" data-card-k="color" value="${card.color}"></div>
+    const el = document.createElement('div'); el.className = 'cap-card'; el.dataset.cardId = card.id;
+    el.innerHTML = `<div class="cap-head"><span class="dot"></span><span class="name">▣ ${escapeHtml(card.text || '(blank card)')}</span><span class="meta">${(cardStart(card)/1000).toFixed(2)}s</span><button class="more" title="Style options">⋯</button><button class="del" title="Delete title card">✕</button></div>
+      <div class="cap-body">
+        <div class="field"><label>Announcement (Enter for line breaks)</label><textarea data-card-k="text">${escapeHtml(card.text)}</textarea></div>
+        <div class="field"><label>Clip timing — <span class="card-time"></span></label><div class="ds"><div class="ds-track"></div><div class="ds-seg" title="Drag to move this card"></div><div class="ds-h start" title="Move card"></div><div class="ds-h end" title="Change duration"></div></div></div>
+        <div class="asset-row"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif"><button class="btn asset-pick">${card.asset ? 'Replace image' : '＋ Add image / logo'}</button><span class="asset-name">${escapeHtml(card.asset?.name || 'Optional brand asset')}</span>${card.asset ? '<button class="btn asset-remove">Remove</button>' : ''}</div>
+        <div class="cap-style">
+          <div class="divider" style="margin:2px 0"></div>
+          <div class="row2"><div class="field"><label>Font</label><select data-card-k="font">${fontOptions(card.font)}</select></div><div class="field"><label>Size (${card.size}px)</label><input type="range" data-card-k="size" min="8" max="${Math.round(state.H*.6)}" value="${card.size}"></div></div>
+          <div class="row2"><div class="field"><label>Colors</label><div class="inline"><input type="color" data-card-k="color" value="${card.color}"><span class="swatch-lbl">text</span><input type="color" data-card-k="stroke" value="${card.stroke}"><span class="swatch-lbl">outline</span></div></div><div class="field"><label>Outline (${card.strokeW}px)</label><input type="range" data-card-k="strokeW" min="0" max="20" value="${card.strokeW}"></div></div>
+          <div class="row2"><div class="field"><label>Card background</label><div class="inline"><input type="color" data-card-k="bg" value="${card.bg}"><span class="swatch-lbl">fill</span></div></div><div class="field"><label>Alignment</label><select data-card-k="align"><option value="left" ${card.align==='left'?'selected':''}>Left</option><option value="center" ${card.align==='center'?'selected':''}>Center</option><option value="right" ${card.align==='right'?'selected':''}>Right</option></select></div></div>
+          <div class="row2"><div class="field"><label>Text vertical position</label><input type="range" data-card-k="y" min="0.08" max="0.92" step="0.01" value="${card.y}"></div><label class="inline" style="gap:6px;font-size:12px"><input type="checkbox" data-card-k="upper" ${card.upper?'checked':''}> UPPERCASE</label></div>
+          <div class="asset-controls" style="display:${card.asset?'grid':'none'}"><div class="row2"><div class="field"><label>Image size</label><input type="range" data-asset-k="scale" min="0.08" max="1" step="0.01" value="${card.asset?.scale || .3}"></div><div class="field"><label>Opacity</label><input type="range" data-asset-k="opacity" min="0.1" max="1" step="0.05" value="${card.asset?.opacity || 1}"></div></div><div class="meta">Drag the image directly on the preview to position it.</div></div>
+        </div>
+        <div class="meta">Click the header to collapse. Open ⋯ for typography, colors, and image controls.</div>
       </div>`;
+    el.querySelector('.cap-head').addEventListener('click', e => { if (e.target.closest('button')) return; el.classList.toggle('open'); });
+    el.querySelector('.more').addEventListener('click', () => { el.classList.add('open'); el.classList.toggle('style-open'); });
     el.querySelector('.del').addEventListener('click', () => removeTitleCard(card));
     el.querySelectorAll('[data-card-k]').forEach(input => input.addEventListener('input', () => {
       const k = input.dataset.cardK, i = cardFrameIndex(card.id); if (i < 0) return;
-      if (k === 'duration'){
-        const old = card.duration; card.duration = Number(input.value);
-        state.frames[i].delay = card.duration; shiftCaptions(state.starts[i] + old, card.duration - old); rebuildTiming(); renderCapList();
-      } else card[k] = input.value;
+      card[k] = input.type === 'checkbox' ? input.checked : input.type === 'range' ? Number(input.value) : input.value;
       state.frames[i].imageData = cardImageData(card);
-      el.querySelector('.name').textContent = card.text || '(blank card)';
+      el.querySelector('.name').textContent = '▣ ' + (card.text || '(blank card)');
+      if (k === 'size') input.closest('.field').querySelector('label').textContent = `Size (${Math.round(card.size)}px)`;
+      if (k === 'strokeW') input.closest('.field').querySelector('label').textContent = `Outline (${Math.round(card.strokeW)}px)`;
       renderTimeline(); drawAt(Number(scrub.value));
     }));
+    el.querySelectorAll('[data-asset-k]').forEach(input => input.addEventListener('input', () => { if (!card.asset) return; card.asset[input.dataset.assetK] = Number(input.value); const i = cardFrameIndex(card.id); state.frames[i].imageData = cardImageData(card); drawAt(Number(scrub.value)); }));
+    const file = el.querySelector('input[type=file]');
+    el.querySelector('.asset-pick').addEventListener('click', () => file.click());
+    file.addEventListener('change', () => {
+      const picked = file.files[0]; if (!picked) return;
+      const img = new Image(); const url = URL.createObjectURL(picked);
+      img.onload = () => { URL.revokeObjectURL(url); card.asset = { name: picked.name, image: img, x: .5, y: .3, scale: .3, opacity: 1 }; const i = cardFrameIndex(card.id); state.frames[i].imageData = cardImageData(card); renderCardList(); const fresh=cardList.querySelector(`[data-card-id="${card.id}"]`); fresh?.classList.add('open','style-open'); drawAt(Number(scrub.value)); showToast('Image added — drag it on the preview'); };
+      img.onerror = () => { URL.revokeObjectURL(url); showToast('Could not read that image'); };
+      img.src = url;
+    });
+    el.querySelector('.asset-remove')?.addEventListener('click', () => { card.asset = null; const i = cardFrameIndex(card.id); state.frames[i].imageData = cardImageData(card); renderCardList(); cardList.querySelector(`[data-card-id="${card.id}"]`)?.classList.add('open','style-open'); drawAt(Number(scrub.value)); });
+
+    const ds = el.querySelector('.ds'), seg = el.querySelector('.ds-seg'), hs = el.querySelector('.ds-h.start'), he = el.querySelector('.ds-h.end'), time = el.querySelector('.card-time');
+    const layout = () => { const a = cardStart(card), b = a + card.duration; hs.style.left = a/state.duration*100+'%'; he.style.left = b/state.duration*100+'%'; seg.style.left = a/state.duration*100+'%'; seg.style.width = card.duration/state.duration*100+'%'; time.textContent = `${(a/1000).toFixed(2)}s → ${(b/1000).toFixed(2)}s`; };
+    layout(); let drag = null; const pointerT = e => { const r = ds.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*state.duration; };
+    const down = (mode,e) => { e.preventDefault(); e.stopPropagation(); pause(); drag = { mode, start: cardStart(card), duration: card.duration, t0:pointerT(e) }; ds.setPointerCapture(e.pointerId); };
+    hs.addEventListener('pointerdown', e => down('move',e)); seg.addEventListener('pointerdown', e => down('move',e)); he.addEventListener('pointerdown', e => down('duration',e));
+    ds.addEventListener('pointermove', e => { if (!drag) return; if (drag.mode === 'duration'){ const i=cardFrameIndex(card.id), old=card.duration; card.duration=Math.max(500,Math.round((pointerT(e)-cardStart(card))/100)*100); state.frames[i].delay=card.duration; shiftCaptions(state.starts[i]+old,card.duration-old); rebuildTiming(); renderCapList(); } else moveTitleCard(card, drag.start + pointerT(e)-drag.t0); layout(); renderTimeline(); drawAt(cardStart(card)); drag.start=cardStart(card); drag.t0=pointerT(e); });
+    const finishTiming = () => { if (!drag) return; const styled=el.classList.contains('style-open'); drag=null; renderCardList(); const fresh=cardList.querySelector(`[data-card-id="${card.id}"]`); fresh?.classList.add('open'); if(styled) fresh?.classList.add('style-open'); };
+    ds.addEventListener('pointerup', finishTiming); ds.addEventListener('pointercancel', finishTiming);
     cardList.appendChild(el);
   });
 }
 addCard.addEventListener('click', addTitleCard);
+
+// ---------- Watermarks ----------
+function drawWatermark(ctx,wm,W,H){
+  if(!wm.image)return;
+  const w=W*wm.scale,h=w*(wm.image.naturalHeight/wm.image.naturalWidth);
+  ctx.save();ctx.globalAlpha=wm.opacity;ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(wm.image,wm.x*W-w/2,wm.y*H-h/2,w,h);ctx.restore();
+}
+function loadWatermarkFile(file,existing){
+  if(!file)return;
+  const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{
+    URL.revokeObjectURL(url);
+    if(existing){existing.name=file.name;existing.image=img;}
+    else state.watermarks.push({id:++watermarkSeq,name:file.name,image:img,x:.84,y:.86,scale:.18,opacity:.65});
+    renderWatermarkList();drawAt(Number(scrub.value));showToast(existing?'Watermark replaced':'Watermark added — drag it on the preview');
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not read that watermark image');};
+  img.src=url;
+}
+addWatermark.addEventListener('click',()=>watermarkInput.click());
+watermarkInput.addEventListener('change',()=>{loadWatermarkFile(watermarkInput.files[0]);watermarkInput.value='';});
+
+function renderWatermarkList(){
+  if(!state.watermarks.length){watermarkList.innerHTML='<div class="empty-hint">Overlay a logo or image throughout the finished GIF.</div>';return;}
+  watermarkList.innerHTML='';
+  state.watermarks.forEach(wm=>{
+    const el=document.createElement('div');el.className='cap-card';el.dataset.watermarkId=wm.id;
+    el.innerHTML=`<div class="cap-head"><span class="dot"></span><span class="name">◈ ${escapeHtml(wm.name)}</span><button class="more" title="Watermark controls">⋯</button><button class="del" title="Delete watermark">✕</button></div>
+      <div class="cap-body"><div class="asset-row"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif"><button class="btn replace">Replace image</button><span class="asset-name">${escapeHtml(wm.name)}</span></div>
+      <div class="cap-style"><div class="divider" style="margin:2px 0"></div><div class="row2"><div class="field"><label>Size (${Math.round(wm.scale*100)}%)</label><input type="range" data-wm-k="scale" min="0.03" max="1" step="0.01" value="${wm.scale}"></div><div class="field"><label>Opacity (${Math.round(wm.opacity*100)}%)</label><input type="range" data-wm-k="opacity" min="0.05" max="1" step="0.05" value="${wm.opacity}"></div></div><div class="row2"><div class="field"><label>Horizontal position</label><input type="range" data-wm-k="x" min="0" max="1" step="0.01" value="${wm.x}"></div><div class="field"><label>Vertical position</label><input type="range" data-wm-k="y" min="0" max="1" step="0.01" value="${wm.y}"></div></div></div>
+      <div class="meta">Visible throughout the GIF. Drag it directly on the preview to position it.</div></div>`;
+    el.querySelector('.cap-head').addEventListener('click',e=>{if(e.target.closest('button'))return;el.classList.toggle('open');});
+    el.querySelector('.more').addEventListener('click',()=>{el.classList.add('open');el.classList.toggle('style-open');});
+    el.querySelector('.del').addEventListener('click',()=>{state.watermarks=state.watermarks.filter(x=>x.id!==wm.id);renderWatermarkList();drawAt(Number(scrub.value));});
+    const file=el.querySelector('input[type=file]');el.querySelector('.replace').addEventListener('click',()=>file.click());file.addEventListener('change',()=>loadWatermarkFile(file.files[0],wm));
+    el.querySelectorAll('[data-wm-k]').forEach(input=>input.addEventListener('input',()=>{wm[input.dataset.wmK]=Number(input.value);if(input.dataset.wmK==='scale')input.closest('.field').querySelector('label').textContent=`Size (${Math.round(wm.scale*100)}%)`;if(input.dataset.wmK==='opacity')input.closest('.field').querySelector('label').textContent=`Opacity (${Math.round(wm.opacity*100)}%)`;drawAt(Number(scrub.value));}));
+    watermarkList.appendChild(el);
+  });
+}
 
 // ---------- Captions ----------
 function defaultCaption(){
@@ -1071,18 +1214,31 @@ function captionAt(pt, t){
   }
   return null;
 }
+function watermarkAt(pt){
+  for(let i=state.watermarks.length-1;i>=0;i--){
+    const wm=state.watermarks[i],w=wm.scale,h=w*(wm.image.naturalHeight/wm.image.naturalWidth)*(state.W/state.H);
+    if(Math.abs(pt.x-wm.x)<=w/2&&Math.abs(pt.y-wm.y)<=h/2)return wm;
+  }
+  return null;
+}
 view.addEventListener('pointerdown', e => {
-  if (!state.captions.length) return;
   const t = ((Number(scrub.value)) % state.duration + state.duration) % state.duration;
   const pt = canvasPoint(e);
+  const wm=watermarkAt(pt);
+  if(wm){dragging={watermark:wm,offx:pt.x-wm.x,offy:pt.y-wm.y};view.classList.add('dragging');view.setPointerCapture(e.pointerId);pause();return;}
+  const frame = state.frames[frameIndexAt(t)];
+  const card = frame.cardId ? state.cards.find(x => x.id === frame.cardId) : null;
+  if (card?.asset){ dragging = { card, offx: pt.x - card.asset.x, offy: pt.y - card.asset.y }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); return; }
   const c = captionAt(pt, t);
   if (c){ dragging = { cap: c, offx: pt.x - c.x, offy: pt.y - c.y }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); }
 });
 view.addEventListener('pointermove', e => {
   if (!dragging) return;
   const pt = canvasPoint(e);
-  dragging.cap.x = Math.max(0, Math.min(1, pt.x - dragging.offx));
-  dragging.cap.y = Math.max(0, Math.min(1, pt.y - dragging.offy));
+  const target = dragging.watermark || (dragging.card ? dragging.card.asset : dragging.cap);
+  target.x = Math.max(0, Math.min(1, pt.x - dragging.offx));
+  target.y = Math.max(0, Math.min(1, pt.y - dragging.offy));
+  if (dragging.card){ const i = cardFrameIndex(dragging.card.id); state.frames[i].imageData = cardImageData(dragging.card); }
   drawAt(Number(scrub.value));
 });
 view.addEventListener('pointerup', e => { if (dragging){ dragging = null; view.classList.remove('dragging'); } });
@@ -1093,17 +1249,43 @@ function renderTimeline(){
   state.cards.forEach(card => {
     const start = cardStart(card);
     const row = document.createElement('div'); row.className = 'tl-row';
-    row.innerHTML = `<div class="tl-label">▣ ${escapeHtml((card.text||'Blank').slice(0,12))}</div><div class="tl-track"><div class="tl-bar" style="left:${start/state.duration*100}%;width:${card.duration/state.duration*100}%;background:linear-gradient(90deg,#2b2438,#7c4dff)"></div><div class="tl-playhead" style="left:0%"></div></div>`;
+    row.innerHTML = `<div class="tl-label">▣ ${escapeHtml((card.text||'Blank').slice(0,12))}</div><div class="tl-track"><div class="tl-bar" style="left:${start/state.duration*100}%;width:${card.duration/state.duration*100}%;background:linear-gradient(90deg,#2b2438,#7c4dff)"><i class="tl-h start"></i><i class="tl-h end"></i></div><div class="tl-playhead" style="left:0%"></div></div>`;
     timeline.appendChild(row);
+    attachTimelineEdit(row, card, 'card');
   });
   state.captions.forEach(cap => {
     const row = document.createElement('div'); row.className = 'tl-row';
     const barLeft = (cap.start / state.duration) * 100;
     const barW = Math.max(1, ((Math.min(cap.end, state.duration) - cap.start) / state.duration) * 100);
     row.innerHTML = `<div class="tl-label">${escapeHtml((cap.text||'(empty)').slice(0,14))}</div>
-      <div class="tl-track"><div class="tl-bar" style="left:${barLeft}%;width:${barW}%"></div><div class="tl-playhead" style="left:0%"></div></div>`;
+      <div class="tl-track"><div class="tl-bar" style="left:${barLeft}%;width:${barW}%"><i class="tl-h start"></i><i class="tl-h end"></i></div><div class="tl-playhead" style="left:0%"></div></div>`;
     timeline.appendChild(row);
+    attachTimelineEdit(row, cap, 'caption');
   });
+}
+function attachTimelineEdit(row, item, type){
+  const track=row.querySelector('.tl-track'), bar=row.querySelector('.tl-bar'), hs=row.querySelector('.tl-h.start'), he=row.querySelector('.tl-h.end');
+  const at=e=>{const r=track.getBoundingClientRect();return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*state.duration;};
+  let drag=null;
+  const values=()=>type==='card'?{start:cardStart(item),end:cardStart(item)+item.duration}:{start:item.start,end:item.end};
+  const layout=()=>{const v=values();bar.style.left=v.start/state.duration*100+'%';bar.style.width=Math.max(1,(v.end-v.start)/state.duration*100)+'%';};
+  function down(mode,e){e.preventDefault();e.stopPropagation();pause();const v=values();drag={mode,t0:at(e),s0:v.start,e0:v.end};try{track.setPointerCapture(e.pointerId);}catch{}}
+  hs.addEventListener('pointerdown',e=>down('start',e)); he.addEventListener('pointerdown',e=>down('end',e)); bar.addEventListener('pointerdown',e=>{if(!e.target.classList.contains('tl-h'))down('move',e);});
+  track.addEventListener('pointerdown',e=>{if(e.target!==track)return;pause();playOffset=at(e);drawAt(playOffset);});
+  track.addEventListener('pointermove',e=>{
+    if(!drag)return; const t=at(e),min=100;
+    if(type==='caption'){
+      if(drag.mode==='start')item.start=Math.round(Math.max(0,Math.min(t,item.end-min)));
+      else if(drag.mode==='end')item.end=Math.round(Math.min(state.duration,Math.max(t,item.start+min)));
+      else{const span=drag.e0-drag.s0,ns=Math.max(0,Math.min(drag.s0+t-drag.t0,state.duration-span));item.start=Math.round(ns);item.end=Math.round(ns+span);}
+      drawAt(drag.mode==='end'?item.end:item.start);
+    }else if(drag.mode==='end'){
+      const i=cardFrameIndex(item.id),old=item.duration;item.duration=Math.max(500,Math.round((t-cardStart(item))/100)*100);state.frames[i].delay=item.duration;shiftCaptions(state.starts[i]+old,item.duration-old);rebuildTiming();drawAt(cardStart(item));
+    }else{moveTitleCard(item,drag.s0+t-drag.t0);drawAt(cardStart(item));drag.s0=cardStart(item);drag.t0=t;}
+    layout();
+  });
+  const finish=()=>{if(!drag)return;drag=null;if(type==='caption'){renderCapList();capList.querySelector(`[data-id="${item.id}"]`)?.classList.add('open');}else{renderCardList();cardList.querySelector(`[data-card-id="${item.id}"]`)?.classList.add('open');}renderTimeline();};
+  track.addEventListener('pointerup',finish);track.addEventListener('pointercancel',finish);
 }
 function updateTimeline(){ renderTimeline(); }
 function movePlayheads(t){
@@ -1123,7 +1305,7 @@ async function renderGif(){
   if (!state.frames.length) return;
   await document.fonts.ready;
   const wasPlaying = playing; pause();
-  renderBtn.disabled = true; addCap.disabled = true; addCard.disabled = true;
+  renderBtn.disabled = true; addCap.disabled = true; addCard.disabled = true; addWatermark.disabled = true;
   const progress = $('#progress'), progBar = $('#progBar'), progLbl = $('#progLbl'), result = $('#result');
   progress.style.display = 'flex'; result.style.display = 'none';
 
@@ -1154,7 +1336,8 @@ async function renderGif(){
       ctx.drawImage(src, 0, 0, W, H);
       // captions at this frame's time (use frame midpoint)
       const t = state.starts[i];
-      for (const cap of state.captions) drawCaption(ctx, cap, t, W, H, scale);
+      if (!f.cardId) for (const cap of state.captions) drawCaption(ctx, cap, t, W, H, scale);
+      for(const wm of state.watermarks)drawWatermark(ctx,wm,W,H);
 
       const { data } = ctx.getImageData(0, 0, W, H);
       const format = numColors <= 64 ? 'rgb444' : 'rgb565';
@@ -1190,7 +1373,7 @@ async function renderGif(){
     showToast('Render failed: ' + err.message);
     progress.style.display = 'none';
   } finally {
-    renderBtn.disabled = false; addCap.disabled = false; addCard.disabled = false;
+    renderBtn.disabled = false; addCap.disabled = false; addCard.disabled = false; addWatermark.disabled = false;
     if (wasPlaying) play();
   }
 }
@@ -1206,7 +1389,7 @@ const capCtx = capCanvas.getContext('2d', { willReadFrequently: true });
 const MAX_REC_FRAMES = 2000;   // hard safety cap so runaway captures can't exhaust memory
 
 let mediaStream = null, recLiveOn = false;
-const rec = { frames: [], active: false, paused: false, discard: false, finalized: false,
+const rec = { frames: [], active: false, paused: false, countingDown: false, discard: false, finalized: false,
               capW: 0, capH: 0, fps: 12, activeMs: 0, segStart: 0, maxDurMs: 0, badgeTimer: null };
 let mediaRecorder = null, recChunks = [];
 const recPauseBtn = $('#recPause'), recStandby = $('#recStandby');
@@ -1269,7 +1452,7 @@ async function chooseSurface(){
   recLiveOn = true;
 }
 
-recToggle.addEventListener('click', () => { rec.active ? stopRecording(true) : startCountdownThenRecord(); });
+recToggle.addEventListener('click', () => { if (rec.countingDown) return; rec.active ? stopRecording(true) : startCountdownThenRecord(); });
 recPauseBtn.addEventListener('click', pauseResumeRec);
 $('#recCancelLive').addEventListener('click', cancelRecorder);
 
@@ -1282,6 +1465,7 @@ function cancelRecorder(){
   recLiveOn = false;
   clearInterval(rec.badgeTimer);
   recCountdown.classList.remove('on');
+  rec.countingDown = false; recToggle.disabled = false;
   recPauseBtn.style.display = 'none';
   closePip();
   if (rec.active){
@@ -1293,19 +1477,24 @@ function cancelRecorder(){
 }
 
 async function startCountdownThenRecord(){
+  rec.countingDown = true; recToggle.disabled = true; recToggle.textContent = 'Starting after countdown…';
   recStandby.classList.remove('on'); recToggle.classList.remove('attn');
   await openPipControls();   // needs the click's user gesture, so open before the countdown
   const cd = Number($('#recDelay').value);
   if (cd > 0){
     recCountdown.classList.add('on');
     for (let n = cd; n > 0; n--){
-      recCountdown.textContent = n;
+      recCountdown.innerHTML = `${n}<small>Preview only — not recording yet</small>`;
       setPipText(`Starting in ${n}…`, false);
       await sleep(1000);
-      if (!mediaStream){ closePip(); return; }   // cancelled mid-countdown
+      if (!mediaStream){ rec.countingDown=false; recToggle.disabled=false; closePip(); return; }   // cancelled mid-countdown
     }
     recCountdown.classList.remove('on');
   }
+  // Let the countdown overlay fully leave the painted frame before MediaRecorder is created.
+  await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+  if (!mediaStream){ rec.countingDown=false; recToggle.disabled=false; return; }
+  rec.countingDown = false; recToggle.disabled = false;
   beginCapture();
 }
 
@@ -1489,6 +1678,10 @@ const reviewCanvas = $('#reviewCanvas'), rvCtx = reviewCanvas.getContext('2d');
 const rvScrub = $('#rvScrub'), rvPlay = $('#rvPlay'), rvTime = $('#rvTime');
 const trimIn = $('#trimIn'), trimOut = $('#trimOut');
 const cropOverlay = $('#cropOverlay'), cropRect = $('#cropRect'), cropDims = $('#cropDims');
+const trimRange = $('#trimRange'), trimSeg = trimRange.querySelector('.ds-seg');
+const trimStartH = trimRange.querySelector('.ds-h.start'), trimEndH = trimRange.querySelector('.ds-h.end');
+const pathCanvas = $('#pathCanvas'), pathCtx = pathCanvas.getContext('2d');
+const pathReveal = { active:false, x:0, y:0 };
 
 const rv = { frames: [], starts: [], duration: 0, W: 0, H: 0,
              crop: { x: 0, y: 0, w: 1, h: 1 }, inMs: 0, outMs: 0,
@@ -1504,6 +1697,7 @@ function enterReview(){
   rv.crop = recGuideOn.checked ? { ...recGuide.crop } : { x: 0, y: 0, w: 1, h: 1 };
   rv.inMs = 0; rv.outMs = rv.duration;
   reviewCanvas.width = rv.W; reviewCanvas.height = rv.H;
+  pathCanvas.width = rv.W; pathCanvas.height = rv.H;
   rvScrub.max = String(rv.duration); rvScrub.value = '0';
   trimIn.max = trimOut.max = String(rv.duration);
   trimIn.value = '0'; trimOut.value = String(rv.duration);
@@ -1527,6 +1721,7 @@ function rvDrawAt(ms){
   rvCtx.putImageData(rv.frames[rvFrameIndexAt(ms)].imageData, 0, 0);
   rvScrub.value = String(Math.round(ms));
   rvTime.textContent = `${(ms/1000).toFixed(2)}s / ${(rv.duration/1000).toFixed(2)}s`;
+  drawPathOverlay();
 }
 function rvLoop(now){
   if (!rv.playing) return;
@@ -1567,15 +1762,26 @@ function updateTrimLabels(){
   rv.inMs = Number(trimIn.value); rv.outMs = Number(trimOut.value);
   $('#trimInLbl').textContent = (rv.inMs/1000).toFixed(2) + 's';
   $('#trimOutLbl').textContent = (rv.outMs/1000).toFixed(2) + 's';
+  if (rv.duration){
+    const a = rv.inMs / rv.duration * 100, b = rv.outMs / rv.duration * 100;
+    trimStartH.style.left = a + '%'; trimEndH.style.left = b + '%';
+    trimSeg.style.left = a + '%'; trimSeg.style.width = Math.max(0, b-a) + '%';
+  }
 }
-trimIn.addEventListener('input', () => {
-  let a = Number(trimIn.value); if (a > Number(trimOut.value) - 100){ a = Number(trimOut.value) - 100; trimIn.value = a; }
-  updateTrimLabels(); rvDrawAt(a);
+let trimDrag = null;
+const trimTimeAt = e => { const r = trimRange.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX-r.left)/r.width)) * rv.duration; };
+function startTrimDrag(mode,e){ e.preventDefault(); if (rv.playing) rvPlayToggle(); trimDrag = { mode, t0:trimTimeAt(e), in0:rv.inMs, out0:rv.outMs }; trimRange.setPointerCapture(e.pointerId); }
+trimStartH.addEventListener('pointerdown', e => startTrimDrag('start',e));
+trimEndH.addEventListener('pointerdown', e => startTrimDrag('end',e));
+trimSeg.addEventListener('pointerdown', e => startTrimDrag('range',e));
+trimRange.addEventListener('pointermove', e => {
+  if (!trimDrag) return; const t = trimTimeAt(e), min = 100;
+  if (trimDrag.mode === 'start') trimIn.value = String(Math.max(0, Math.min(t, Number(trimOut.value)-min)));
+  else if (trimDrag.mode === 'end') trimOut.value = String(Math.min(rv.duration, Math.max(t, Number(trimIn.value)+min)));
+  else { const span=trimDrag.out0-trimDrag.in0, a=Math.max(0,Math.min(trimDrag.in0+t-trimDrag.t0,rv.duration-span)); trimIn.value=String(a); trimOut.value=String(a+span); }
+  updateTrimLabels(); rvDrawAt(trimDrag.mode === 'end' ? rv.outMs : rv.inMs);
 });
-trimOut.addEventListener('input', () => {
-  let b = Number(trimOut.value); if (b < Number(trimIn.value) + 100){ b = Number(trimIn.value) + 100; trimOut.value = b; }
-  updateTrimLabels(); rvDrawAt(b);
-});
+trimRange.addEventListener('pointerup', () => trimDrag=null); trimRange.addEventListener('pointercancel', () => trimDrag=null);
 
 // Crop rectangle (normalized 0..1 over the recorded frame)
 function layoutCrop(){
@@ -1605,6 +1811,11 @@ $('#resetCropBtn').addEventListener('click', () => {
 // ---------- Feature: focus-zoom on the crop while adjusting (static mode) ----------
 const stageInner = $('#stageInner');
 let focusTimer = null;
+stageInner.addEventListener('pointermove',e=>{
+  if(rv.mode!=='camera'||rv.path.length<2)return;
+  const r=stageInner.getBoundingClientRect();pathReveal.active=true;pathReveal.x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));pathReveal.y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));drawPathOverlay();
+});
+stageInner.addEventListener('pointerleave',()=>{if(pathReveal.active){pathReveal.active=false;drawPathOverlay();}});
 function unfocusView(instant){ stageInner.style.transition = instant ? 'none' : ''; stageInner.style.transform = 'none'; }
 function focusOnCrop(){
   if (rv.mode !== 'static') return;
@@ -1616,8 +1827,15 @@ function focusOnCrop(){
   stageInner.style.transform = `translate(${(0.5 - s*cx)*100}%, ${(0.5 - s*cy)*100}%) scale(${s})`;
 }
 function scheduleFocus(delay){ if (rv.mode !== 'static') return; clearTimeout(focusTimer); focusTimer = setTimeout(focusOnCrop, delay == null ? 500 : delay); }
-function onDragStart(mode){ if (rv.mode !== 'static') return; clearTimeout(focusTimer); if (mode === 'move') unfocusView(true); }
-function onDragEnd(){ if (rv.mode === 'static') scheduleFocus(); }
+let pendingPathEdit = false;
+function onDragStart(mode){
+  if (rv.mode === 'camera' && rv.path.length && !rv.recordingPath){ pendingPathEdit=true; return; }
+  if (rv.mode !== 'static') return; clearTimeout(focusTimer); if (mode === 'move') unfocusView(true);
+}
+function onDragEnd(){
+  if (pendingPathEdit){ pendingPathEdit=false; insertPathKeyframe(Number(rvScrub.value),rv.crop); return; }
+  if (rv.mode === 'static') scheduleFocus();
+}
 
 // ---------- Feature: moving window (virtual camera, live drag-to-record) ----------
 const modeBtns = [...reviewWrap.querySelectorAll('.mode-btn')];
@@ -1649,15 +1867,62 @@ function applyAspect(aspect){
   onCropChange();
 }
 
-function interpPath(ms){
-  const p = rv.path;
+function interpOnPath(p,ms){
   if (!p.length) return { x: rv.crop.x, y: rv.crop.y, w: rv.crop.w, h: rv.crop.h };
   if (ms <= p[0].t) return p[0];
   if (ms >= p[p.length-1].t) return p[p.length-1];
   let lo = 0, hi = p.length - 1;
   while (lo + 1 < hi){ const mid = (lo + hi) >> 1; if (p[mid].t <= ms) lo = mid; else hi = mid; }
-  const a = p[lo], b = p[hi], f = (ms - a.t) / ((b.t - a.t) || 1);
+  const a = p[lo], b = p[hi]; let f = (ms - a.t) / ((b.t - a.t) || 1);
+  if(a.easeRamp||b.easeRamp)f=f*f*(3-2*f);
   return { x: a.x+(b.x-a.x)*f, y: a.y+(b.y-a.y)*f, w: a.w+(b.w-a.w)*f, h: a.h+(b.h-a.h)*f };
+}
+function interpPath(ms){return interpOnPath(rv.path,ms);}
+
+function insertPathKeyframe(ms,crop){
+  if(rv.path.length<2)return;
+  const original=rv.path.slice(), ramp=Math.min(500,Math.max(180,(rv.outMs-rv.inMs)*.06));
+  const a=Math.max(original[0].t,ms-ramp),b=Math.min(original[original.length-1].t,ms+ramp);
+  const before={...interpOnPath(original,a),t:a,easeRamp:true};
+  const key={x:crop.x,y:crop.y,w:crop.w,h:crop.h,t:ms,easeRamp:true};
+  const after={...interpOnPath(original,b),t:b,easeRamp:true};
+  rv.path=original.filter(p=>p.t<a||p.t>b).concat([before,key,after]).sort((x,y)=>x.t-y.t);
+  rv.path=rv.path.filter((p,i,a)=>i===a.length-1||Math.abs(p.t-a[i+1].t)>.5);
+  pathStatus.textContent=`Camera keyframe at ${(ms/1000).toFixed(2)}s · scale and position eased automatically.`;
+  drawPathOverlay();drawOutPreview();
+}
+
+// Soft overlapping window-shaped marks form a smudge that darkens with time.
+// Hovering cuts a feathered hole in it, revealing the recording underneath.
+function drawPathOverlay(){
+  pathCtx.clearRect(0,0,pathCanvas.width,pathCanvas.height);
+  if (rv.mode !== 'camera' || rv.path.length < 2) return;
+  const first = rv.path[0], last = rv.path[rv.path.length-1];
+  const samples = Math.min(56, Math.max(24,rv.path.length));
+  pathCtx.save();
+  for (let i=0;i<samples;i++){
+    const t=first.t+(last.t-first.t)*i/(samples-1),p=interpPath(t);
+    const x=p.x*rv.W,y=p.y*rv.H,w=p.w*rv.W,h=p.h*rv.H;
+    pathCtx.filter=`blur(${Math.max(4,rv.W*.008)}px)`;
+    pathCtx.fillStyle=`rgba(28,23,35,${.018+(i/(samples-1))*.065})`;
+    pathCtx.fillRect(x,y,w,h);
+  }
+  pathCtx.filter='none';
+  if(pathReveal.active){
+    const x=pathReveal.x*rv.W,y=pathReveal.y*rv.H,r=Math.min(rv.W,rv.H)*.16;
+    pathCtx.globalCompositeOperation='destination-out';
+    const g=pathCtx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.58,'rgba(0,0,0,.92)');g.addColorStop(1,'rgba(0,0,0,0)');
+    pathCtx.fillStyle=g;pathCtx.beginPath();pathCtx.arc(x,y,r,0,Math.PI*2);pathCtx.fill();pathCtx.globalCompositeOperation='source-over';
+  }
+  const marks = [0,.25,.5,.75,1];
+  pathCtx.font = `700 ${Math.max(12,Math.round(rv.H*.022))}px sans-serif`; pathCtx.textBaseline='bottom';
+  marks.forEach((f,i) => {
+    const t=first.t+(last.t-first.t)*f, p=interpPath(t), x=p.x*rv.W,y=p.y*rv.H,w=p.w*rv.W,h=p.h*rv.H;
+    const label = i===0 ? `START ${(t/1000).toFixed(1)}s` : i===marks.length-1 ? `END ${(t/1000).toFixed(1)}s` : `${(t/1000).toFixed(1)}s`;
+    const tw=pathCtx.measureText(label).width+12, lh=Math.max(18,rv.H*.034), ly=Math.max(lh,y-4), lx=Math.max(0,Math.min(x,rv.W-tw));
+    pathCtx.fillStyle='rgba(43,36,56,.88)'; pathCtx.fillRect(lx,ly-lh,tw,lh); pathCtx.fillStyle='#fff'; pathCtx.fillText(label,lx+6,ly-3);
+  });
+  pathCtx.restore();
 }
 
 function syncModeUI(m){
@@ -1665,6 +1930,7 @@ function syncModeUI(m){
   staticControls.style.display = m === 'static' ? 'block' : 'none';
   cameraControls.style.display = m === 'camera' ? 'block' : 'none';
   cropRect.classList.toggle('camera', m === 'camera');
+  drawPathOverlay();
 }
 // User-driven mode switch — resets the path and re-initialises the window for that mode.
 function setMode(m){
@@ -1688,6 +1954,7 @@ function reopenReview(){
   pause();   // stop editor playback
   backToReviewBtn.style.display = 'none';
   reviewCanvas.width = rv.W; reviewCanvas.height = rv.H;
+  pathCanvas.width = rv.W; pathCanvas.height = rv.H;
   rvScrub.max = String(rv.duration); rvScrub.value = String(rv.inMs);
   trimIn.max = trimOut.max = String(rv.duration);
   trimIn.value = String(rv.inMs); trimOut.value = String(rv.outMs);
@@ -1698,7 +1965,7 @@ function reopenReview(){
   if (rv.mode === 'camera'){
     unfocusView();
     pathRecBtn.textContent = rv.path.length ? '● Re-record path' : '● Record camera path';
-    pathStatus.textContent = rv.path.length ? `Path recorded · ${rv.path.length} samples · press ▶ to preview.` : 'Position the window, then record its motion while the clip plays.';
+    pathStatus.textContent = rv.path.length ? `Path ready · press ▶ to preview, or scrub to any moment and resize the window.` : 'Position the window, then record its motion while the clip plays.';
     if (rv.path.length){ const s = interpPath(rv.inMs); rv.crop.x = s.x; rv.crop.y = s.y; rv.crop.w = s.w; rv.crop.h = s.h; }
     layoutCrop(); rvDrawAt(rv.inMs); drawOutPreview();
   } else {
@@ -1721,7 +1988,7 @@ function stopPathRec(){
   pathRecBtn.classList.remove('recording'); pathRecBtn.textContent = '● Re-record path';
   if (rv.playing){ rv.playing = false; cancelAnimationFrame(rv.raf); rvPlay.textContent = '▶'; }
   if (rv.path.length){
-    pathStatus.textContent = `Path recorded · ${rv.path.length} samples · press ▶ to preview.`;
+    pathStatus.textContent = 'Path ready · press ▶ to preview, or scrub to any moment and resize the window.';
     const s = interpPath(rv.inMs); rv.crop.x = s.x; rv.crop.y = s.y; rv.crop.w = s.w; rv.crop.h = s.h;
     onCropChange(); rvDrawAt(rv.inMs);
   } else {

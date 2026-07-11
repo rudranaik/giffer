@@ -7,6 +7,9 @@ No accounts, no uploads, no paid tiers. Everything runs in your browser.
 ## Features
 
 - **Load any GIF** — drag & drop or browse.
+- **Record your screen** — then trim, crop, or follow the action with a moving camera window.
+- **Title-card clips** — insert collapsible, fully styled separators anywhere in the timeline, with optional movable/scalable image or logo assets.
+- **Watermarks** — overlay movable, scalable, opacity-adjustable logos or images throughout the finished GIF.
 - **Multiple captions**, each fully independent — and **duplicate** any caption (⧉) to reuse its styling.
 - **Full styling** — font (Impact, Anton, Bangers & more), size, fill color, outline color/width, background shape (rectangle / rounded / pill) with opacity, alignment, and UPPERCASE.
 - **Drag to position** captions directly on the preview.
