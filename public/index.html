@@ -55,7 +55,7 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   header .logo { font-size: 22px; }
-  header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 2px; white-space: nowrap; }
   header .spacer { flex: 1; }
   .layout {
     display: grid;
@@ -150,6 +150,12 @@
   .btn.block { width: 100%; }
   .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
   .cap-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .clip-actions { display: flex; gap: 8px; }
+  .clip-card { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .clip-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .clip-head .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clip-head .del { color: var(--muted); border: none; background: none; cursor: pointer; font-size: 15px; }
+  .clip-head .del:hover { color: var(--danger); }
   .cap-card { border: 1px solid var(--border); border-radius: 12px; background: #fff; overflow: hidden; box-shadow: 0 2px 8px rgba(43,36,56,.05); }
   .cap-head {
     display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer;
@@ -281,6 +287,11 @@
   .review-tools { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 720px; }
   .preset-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .preset-row .btn { padding: 5px 11px; font-size: 12px; }
+  @media (max-width: 700px) {
+    header .sub { max-width: 44vw; overflow: hidden; text-overflow: ellipsis; }
+    .layout.editor-on { grid-template-columns: 1fr; }
+    .layout.editor-on .sidebar { border-left: 0; border-top: 1px solid var(--border); }
+  }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #d9cdec; border-radius: 6px; }
   ::-webkit-scrollbar-thumb:hover { background: #c6b5e3; }
@@ -290,7 +301,7 @@
 <header>
   <span class="logo">🎬</span>
   <h1>Giffer</h1>
-  <span class="sub">GIF Caption Studio</span>
+  <span class="sub">Turn GIFs or screen recordings into polished, captioned clips — right in your browser.</span>
   <span class="spacer"></span>
   <button class="btn" id="backToReviewBtn" style="display:none">↩ Adjust recording</button>
   <button class="btn" id="newBtn" style="display:none">↺ New GIF</button>
@@ -319,6 +330,14 @@
       </div>
       <div class="timeline" id="timeline"></div>
       <div class="meta" id="gifMeta"></div>
+
+      <div class="captions-panel">
+        <div class="section-title">Clips</div>
+        <button class="btn primary block" id="addCard" disabled>＋ Add title card at playhead</button>
+        <div class="cap-list" id="cardList" style="margin-top:12px">
+          <div class="empty-hint">Add a title card to introduce the next part of your GIF.</div>
+        </div>
+      </div>
 
       <div class="captions-panel">
         <div class="section-title">Captions</div>
@@ -509,10 +528,12 @@ const state = {
   starts: [],          // cumulative start time (ms) per frame
   duration: 0,         // total ms
   captions: [],
+  cards: [],
   origBytes: 0,
   origName: 'caption',
 };
 let capSeq = 0;
+let cardSeq = 0;
 
 const FONTS = ['Anton','Impact','Bangers','Oswald','Pacifico','Roboto','Arial','Georgia','Courier New','Comic Sans MS','Verdana'];
 
@@ -523,6 +544,7 @@ const canvasWrap = $('#canvasWrap'), view = $('#view'), vctx = view.getContext('
 const playBtn = $('#playBtn'), scrub = $('#scrub'), timeLbl = $('#timeLbl');
 const timeline = $('#timeline'), gifMeta = $('#gifMeta');
 const addCap = $('#addCap'), capList = $('#capList');
+const addCard = $('#addCard'), cardList = $('#cardList');
 const renderBtn = $('#renderBtn'), newBtn = $('#newBtn'), backToReviewBtn = $('#backToReviewBtn');
 const toast = $('#toast');
 
@@ -569,7 +591,7 @@ function enterEditor(metaText){
   newBtn.style.display = 'inline-block';
   // Recordings retain their source footage, so offer a way back to re-crop / re-adjust the window.
   backToReviewBtn.style.display = rv.frames.length ? 'inline-block' : 'none';
-  addCap.disabled = false; renderBtn.disabled = false;
+  addCap.disabled = false; addCard.disabled = false; renderBtn.disabled = false;
   gifMeta.textContent = metaText;
 }
 
@@ -631,6 +653,85 @@ function pause(){ playing = false; playBtn.textContent = '▶'; if (rafId) cance
 playBtn.addEventListener('click', ()=> playing ? pause() : play());
 scrub.addEventListener('input', ()=>{ pause(); playOffset = Number(scrub.value); drawAt(playOffset); });
 document.addEventListener('keydown', e => { if (e.code === 'Space' && state.frames.length && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT'){ e.preventDefault(); playing ? pause() : play(); } });
+
+// ---------- Title cards / separator clips ----------
+function rebuildTiming(){
+  state.starts = []; let t = 0;
+  for (const frame of state.frames){ state.starts.push(t); t += frame.delay; }
+  state.duration = t;
+  scrub.max = String(t);
+}
+function cardImageData(card){
+  const c = document.createElement('canvas'); c.width = state.W; c.height = state.H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = card.bg; ctx.fillRect(0, 0, c.width, c.height);
+  const size = Math.max(18, Math.round(state.H * 0.12));
+  ctx.font = `600 ${size}px 'Fredoka', sans-serif`;
+  ctx.fillStyle = card.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lines = wrapLines(ctx, card.text || '', state.W * 0.82);
+  const lineH = size * 1.18, y0 = state.H / 2 - (lines.length - 1) * lineH / 2;
+  lines.forEach((line, i) => ctx.fillText(line, state.W / 2, y0 + i * lineH));
+  return ctx.getImageData(0, 0, state.W, state.H);
+}
+function cardFrameIndex(id){ return state.frames.findIndex(f => f.cardId === id); }
+function cardStart(card){ const i = cardFrameIndex(card.id); return i < 0 ? 0 : state.starts[i]; }
+function shiftCaptions(at, delta){
+  for (const cap of state.captions){
+    if (cap.start >= at){ cap.start += delta; cap.end += delta; }
+    else if (cap.end > at) cap.end += delta;
+    cap.start = Math.max(0, cap.start); cap.end = Math.max(cap.start, cap.end);
+  }
+}
+function addTitleCard(){
+  pause();
+  const at = Number(scrub.value);
+  let index = state.starts.findIndex(t => t >= at);
+  if (index < 0) index = state.frames.length;
+  const card = { id: ++cardSeq, text: 'Up next…', duration: 1500, bg: '#2b2438', color: '#ffffff' };
+  shiftCaptions(at, card.duration);
+  state.cards.push(card);
+  state.frames.splice(index, 0, { cardId: card.id, imageData: cardImageData(card), delay: card.duration });
+  rebuildTiming(); renderCardList(); renderCapList(); renderTimeline();
+  playOffset = at; drawAt(at);
+  cardList.querySelector(`[data-card-id="${card.id}"] input[type=text]`)?.focus();
+  showToast('Title card added at the playhead');
+}
+function removeTitleCard(card){
+  pause();
+  const i = cardFrameIndex(card.id); if (i < 0) return;
+  const at = state.starts[i], duration = state.frames[i].delay;
+  state.frames.splice(i, 1); state.cards = state.cards.filter(c => c.id !== card.id);
+  shiftCaptions(at + duration, -duration); rebuildTiming();
+  playOffset = Math.min(at, Math.max(0, state.duration - 1));
+  renderCardList(); renderCapList(); renderTimeline(); drawAt(playOffset);
+}
+function renderCardList(){
+  if (!state.cards.length){ cardList.innerHTML = '<div class="empty-hint">Add a title card to introduce the next part of your GIF.</div>'; return; }
+  cardList.innerHTML = '';
+  [...state.cards].sort((a,b) => cardStart(a) - cardStart(b)).forEach(card => {
+    const el = document.createElement('div'); el.className = 'clip-card'; el.dataset.cardId = card.id;
+    el.innerHTML = `<div class="clip-head"><span>▣</span><span class="name">${escapeHtml(card.text || '(blank card)')}</span><span class="meta">${(cardStart(card)/1000).toFixed(2)}s</span><button class="del" title="Delete title card">✕</button></div>
+      <div class="field"><label>Announcement</label><input type="text" data-card-k="text" value="${escapeHtml(card.text)}"></div>
+      <div class="row3">
+        <div class="field"><label>Duration</label><select data-card-k="duration"><option value="1000" ${card.duration===1000?'selected':''}>1 sec</option><option value="1500" ${card.duration===1500?'selected':''}>1.5 sec</option><option value="2000" ${card.duration===2000?'selected':''}>2 sec</option><option value="3000" ${card.duration===3000?'selected':''}>3 sec</option><option value="5000" ${card.duration===5000?'selected':''}>5 sec</option></select></div>
+        <div class="field"><label>Background</label><input type="color" data-card-k="bg" value="${card.bg}"></div>
+        <div class="field"><label>Text</label><input type="color" data-card-k="color" value="${card.color}"></div>
+      </div>`;
+    el.querySelector('.del').addEventListener('click', () => removeTitleCard(card));
+    el.querySelectorAll('[data-card-k]').forEach(input => input.addEventListener('input', () => {
+      const k = input.dataset.cardK, i = cardFrameIndex(card.id); if (i < 0) return;
+      if (k === 'duration'){
+        const old = card.duration; card.duration = Number(input.value);
+        state.frames[i].delay = card.duration; shiftCaptions(state.starts[i] + old, card.duration - old); rebuildTiming(); renderCapList();
+      } else card[k] = input.value;
+      state.frames[i].imageData = cardImageData(card);
+      el.querySelector('.name').textContent = card.text || '(blank card)';
+      renderTimeline(); drawAt(Number(scrub.value));
+    }));
+    cardList.appendChild(el);
+  });
+}
+addCard.addEventListener('click', addTitleCard);
 
 // ---------- Captions ----------
 function defaultCaption(){
@@ -989,6 +1090,12 @@ view.addEventListener('pointerup', e => { if (dragging){ dragging = null; view.c
 // ---------- Timeline ----------
 function renderTimeline(){
   timeline.innerHTML = '';
+  state.cards.forEach(card => {
+    const start = cardStart(card);
+    const row = document.createElement('div'); row.className = 'tl-row';
+    row.innerHTML = `<div class="tl-label">▣ ${escapeHtml((card.text||'Blank').slice(0,12))}</div><div class="tl-track"><div class="tl-bar" style="left:${start/state.duration*100}%;width:${card.duration/state.duration*100}%;background:linear-gradient(90deg,#2b2438,#7c4dff)"></div><div class="tl-playhead" style="left:0%"></div></div>`;
+    timeline.appendChild(row);
+  });
   state.captions.forEach(cap => {
     const row = document.createElement('div'); row.className = 'tl-row';
     const barLeft = (cap.start / state.duration) * 100;
@@ -1016,7 +1123,7 @@ async function renderGif(){
   if (!state.frames.length) return;
   await document.fonts.ready;
   const wasPlaying = playing; pause();
-  renderBtn.disabled = true; addCap.disabled = true;
+  renderBtn.disabled = true; addCap.disabled = true; addCard.disabled = true;
   const progress = $('#progress'), progBar = $('#progBar'), progLbl = $('#progLbl'), result = $('#result');
   progress.style.display = 'flex'; result.style.display = 'none';
 
@@ -1083,7 +1190,7 @@ async function renderGif(){
     showToast('Render failed: ' + err.message);
     progress.style.display = 'none';
   } finally {
-    renderBtn.disabled = false; addCap.disabled = false;
+    renderBtn.disabled = false; addCap.disabled = false; addCard.disabled = false;
     if (wasPlaying) play();
   }
 }
