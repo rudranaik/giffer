@@ -32,7 +32,14 @@ node serve.js        # then open http://localhost:4599
 
 The app is fully static (everything in `public/`), deployed as a Cloudflare Worker with static assets at **giffer.nrudra.in**.
 
-Flow: this repo is the source of truth → a fork on a second GitHub account syncs from it periodically (via that account's scheduled Actions) → Cloudflare's git integration (Workers Builds) is connected to the fork and runs `npx wrangler deploy` on each sync. [wrangler.jsonc](wrangler.jsonc) drives that deploy: it sets the assets directory (`public/`) and the custom domain. No deploy secrets or workflows live in this repo.
+Every push to `master` deploys directly through [the GitHub Actions workflow](.github/workflows/deploy.yml). [wrangler.jsonc](wrangler.jsonc) sets the assets directory (`public/`) and the custom domain.
+
+The repository needs these GitHub Actions secrets under **Settings → Secrets and variables → Actions**:
+
+- `CLOUDFLARE_API_TOKEN` — a Cloudflare API token with permission to deploy Workers.
+- `CLOUDFLARE_ACCOUNT_ID` — the Cloudflare account ID that owns `nrudra.in`.
+
+The workflow can also be run manually from the repository's **Actions** tab. Keep credentials in GitHub secrets; never commit them to the repository.
 
 ## Tech
 
