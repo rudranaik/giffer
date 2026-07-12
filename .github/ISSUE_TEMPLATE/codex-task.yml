@@ -1,0 +1,40 @@
+name: Codex task
+description: Create a development ticket for the local Codex agent.
+title: "[Codex]: "
+labels: ["codex:ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Creating this form starts the local Codex agent. It will ask questions
+        in the issue if it cannot safely determine the expected result.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should change for the person using the product?
+      placeholder: A concise description of the user-visible or technical result.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable conditions that make this task complete.
+      placeholder: |
+        - When …, then …
+        - When …, then …
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context, references, or constraints
+      description: Optional links, screenshots, implementation preferences, or non-goals.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This issue contains no passwords, API keys, or other secrets.
+          required: true

@@ -44,6 +44,28 @@ The repository needs these GitHub Actions secrets under **Settings → Secrets a
 
 The workflow can also be run manually from the repository's **Actions** tab. Keep credentials in GitHub secrets; never commit them to the repository.
 
+## GitHub issue → Codex development
+
+GitHub issues can be used as development tickets for a Codex agent running on a
+local macOS machine. It never pushes directly to `master`: each completed task
+is delivered as a draft pull request for review.
+
+1. Once, install the local runner from a terminal on the Mac that has Codex
+   authenticated: `bash .github/scripts/install-codex-runner.sh`.
+2. Create an issue with the **Codex task** form (or add the `codex:ready`
+   label to an existing issue). This starts the local runner.
+3. If the ticket needs a decision, Codex posts its questions on the issue and
+   labels it `codex:needs-info`. Reply there; any human reply restarts it. You
+   can also comment `/codex continue` to manually restart a ticket.
+4. Codex works on an isolated `codex/issue-<number>-…` branch, validates the
+   change, and posts a draft PR linked to the issue. Review and merge that PR
+   normally.
+
+The runner uses the macOS user's existing Codex login and GitHub Actions'
+short-lived `GITHUB_TOKEN`; no additional repository secret is required. See
+[the workflow contract](.github/CODEX_ISSUE_WORKFLOW.md) for labels, boundaries,
+and the exact lifecycle.
+
 ## Tech
 
 Plain HTML/CSS/JS — no build step. GIF decoding via `gifuct-js`, re-encoding via `gifenc`, compositing on `<canvas>`.

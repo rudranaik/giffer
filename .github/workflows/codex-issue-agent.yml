@@ -1,0 +1,58 @@
+name: Codex issue agent
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: GitHub issue number to process
+        required: true
+        type: string
+
+# The job never writes to the default branch. It needs these permissions only
+# to discuss the issue and publish a branch + draft pull request.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: codex-issue-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  codex:
+    name: Work on issue
+    runs-on: [self-hosted, codex, giffer]
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' &&
+        ((github.event.action == 'labeled' && github.event.label.name == 'codex:ready') ||
+         (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'codex:ready')) ||
+         (github.event.action == 'reopened' && contains(github.event.issue.labels.*.name, 'codex:ready')))) ||
+      (github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        github.event.comment.user.type != 'Bot' &&
+        (startsWith(github.event.comment.body, '/codex continue') ||
+         contains(github.event.issue.labels.*.name, 'codex:needs-info')))
+
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure the commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Codex
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/run-codex-issue.sh "${{ github.event.issue.number || inputs.issue_number }}"

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Codex workflow guide
+    url: https://github.com/rudranaik/giffer/blob/master/.github/CODEX_ISSUE_WORKFLOW.md
+    about: Learn how to start, answer, and review Codex-driven work.
