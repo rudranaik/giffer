@@ -6,11 +6,12 @@ runner. Its work is always initiated explicitly by a GitHub issue event.
 ## Starting and resuming work
 
 - Open an issue using the **Codex task** form. It receives `codex:ready` and
-  starts one runner job.
+  receives an immediate acknowledgement, then starts one runner job.
 - For an existing issue, add the `codex:ready` label or comment
   `/codex continue`.
 - When Codex needs information, it adds `codex:needs-info` and asks its
-  questions in the issue. Any subsequent human comment restarts the job.
+  questions in the issue. Any subsequent human comment is acknowledged and
+  restarts the job.
 
 ## Required behavior
 

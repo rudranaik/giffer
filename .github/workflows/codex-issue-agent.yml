@@ -2,7 +2,7 @@ name: Codex issue agent
 
 on:
   issues:
-    types: [opened, labeled, reopened]
+    types: [labeled, reopened]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -19,19 +19,39 @@ permissions:
   issues: write
   pull-requests: write
 
-concurrency:
-  group: codex-issue-${{ github.event.issue.number || inputs.issue_number }}
-  cancel-in-progress: false
-
 jobs:
-  codex:
-    name: Work on issue
-    runs-on: [self-hosted, codex, giffer]
+  acknowledge:
+    name: Acknowledge request
+    runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' &&
         ((github.event.action == 'labeled' && github.event.label.name == 'codex:ready') ||
-         (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'codex:ready')) ||
+         (github.event.action == 'reopened' && contains(github.event.issue.labels.*.name, 'codex:ready')))) ||
+      (github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        github.event.comment.user.type != 'Bot' &&
+        (startsWith(github.event.comment.body, '/codex continue') ||
+         contains(github.event.issue.labels.*.name, 'codex:needs-info')))
+    steps:
+      - name: Confirm receipt in the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body "✅ Codex has received this update and queued it for processing. I’ll post the next substantive update here."
+
+  codex:
+    name: Work on issue
+    runs-on: [self-hosted, codex, giffer]
+    concurrency:
+      group: codex-issue-${{ github.event.issue.number || inputs.issue_number }}
+      cancel-in-progress: false
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' &&
+        ((github.event.action == 'labeled' && github.event.label.name == 'codex:ready') ||
          (github.event.action == 'reopened' && contains(github.event.issue.labels.*.name, 'codex:ready')))) ||
       (github.event_name == 'issue_comment' &&
         github.event.issue.pull_request == null &&

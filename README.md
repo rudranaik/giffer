@@ -53,7 +53,8 @@ is delivered as a draft pull request for review.
 1. Once, install the local runner from a terminal on the Mac that has Codex
    authenticated: `bash .github/scripts/install-codex-runner.sh`.
 2. Create an issue with the **Codex task** form (or add the `codex:ready`
-   label to an existing issue). This starts the local runner.
+   label to an existing issue). GitHub immediately confirms receipt in the
+   issue, then starts the local runner.
 3. If the ticket needs a decision, Codex posts its questions on the issue and
    labels it `codex:needs-info`. Reply there; any human reply restarts it. You
    can also comment `/codex continue` to manually restart a ticket.
