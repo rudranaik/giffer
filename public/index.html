@@ -208,6 +208,10 @@
   .swatch-lbl { font-size: 11px; color: var(--muted); flex: 1; }
   .divider { height: 1px; background: var(--border); margin: 16px 0; }
   .export-row { display: flex; flex-direction: column; gap: 10px; }
+  .size-picker { padding: 14px; border: 1px solid #ddccff; border-radius: 14px; background: linear-gradient(145deg, #fff, var(--accent-soft)); }
+  .size-picker output { display: block; color: var(--accent); font-family: 'Fredoka', sans-serif; font-size: 30px; font-weight: 600; line-height: 1.1; text-align: center; font-variant-numeric: tabular-nums; }
+  .size-picker input { width: 100%; margin: 14px 0 4px; accent-color: var(--accent); cursor: ew-resize; }
+  .size-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
   .val { font-size: 11px; color: var(--muted); min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
   #progress { display: none; flex-direction: column; gap: 6px; }
   .bar { height: 8px; background: #efe9f7; border-radius: 5px; overflow: hidden; }
@@ -512,24 +516,10 @@
   <div class="sidebar">
     <div class="section-title">Export</div>
     <div class="export-row">
-      <div class="field">
-        <label>Colors — fewer = smaller file (<span id="colorsVal">128</span>)</label>
-        <input type="range" id="colors" min="16" max="256" step="8" value="128" />
-      </div>
-      <div class="field">
-        <label>Scale — <span id="scaleVal">100</span>% of original size</label>
-        <input type="range" id="scale" min="30" max="100" step="5" value="100" />
-      </div>
-      <div class="field">
-        <label>Speed (frame delay ×<span id="speedVal">1.0</span>)</label>
-        <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" />
-      </div>
-      <div class="field">
-        <label>Background matte (used behind transparent areas)</label>
-        <div class="inline">
-          <input type="color" id="matte" value="#000000" />
-          <label class="inline" style="gap:5px"><input type="checkbox" id="matteOn" /> <span class="swatch-lbl">Fill background</span></label>
-        </div>
+      <div class="size-picker">
+        <output id="sizeEstimate" for="sizeChoice">Calculating…</output>
+        <input type="range" id="sizeChoice" min="0" max="100" step="1" value="55" aria-label="Choose download file size" />
+        <div class="size-ends"><span>Smaller file</span><span>Sharper GIF</span></div>
       </div>
       <button class="btn accent block" id="renderBtn" disabled>⬇ Render &amp; Save GIF</button>
       <div id="progress">
@@ -537,7 +527,7 @@
         <div class="meta" id="progLbl">Rendering…</div>
       </div>
       <div id="result">
-        <div class="size">New size: <b id="outSize">–</b> <span id="origSize"></span></div>
+        <div class="size">Download size: <b id="outSize">–</b></div>
         <a class="dl" id="dlLink"><button class="btn primary block">💾 Download GIF</button></a>
       </div>
     </div>
@@ -633,6 +623,9 @@ function enterEditor(metaText){
   backToReviewBtn.style.display = rv.frames.length ? 'inline-block' : 'none';
   addCap.disabled = false; addCard.disabled = false; addWatermark.disabled = false; renderBtn.disabled = false;
   gifMeta.textContent = metaText;
+  sizeModel.bytesPerPixel = 0;
+  updateSizeEstimate();
+  setTimeout(calibrateSizeEstimator, 0);
 }
 
 // Build full frames honoring disposal methods
@@ -1293,11 +1286,77 @@ function movePlayheads(t){
   timeline.querySelectorAll('.tl-playhead').forEach(p => p.style.left = pct + '%');
 }
 
-// ---------- Export sliders ----------
-const colors = $('#colors'), scaleEl = $('#scale'), speedEl = $('#speed');
-colors.addEventListener('input', ()=> $('#colorsVal').textContent = colors.value);
-scaleEl.addEventListener('input', ()=> $('#scaleVal').textContent = scaleEl.value);
-speedEl.addEventListener('input', ()=> $('#speedVal').textContent = Number(speedEl.value).toFixed(1));
+// ---------- Simple export size control ----------
+const sizeChoice = $('#sizeChoice'), sizeEstimate = $('#sizeEstimate');
+const sizeModel = { bytesPerPixel: 0 };
+
+function exportSettings(){
+  const q = Number(sizeChoice.value) / 100;
+  return {
+    scale: .35 + .65 * q,
+    colors: Math.round(32 + 160 * q),
+    stride: q < .2 ? 3 : q < .55 ? 2 : 1,
+  };
+}
+
+function chosenFrames(stride){
+  const frames = [];
+  for (let i = 0; i < state.frames.length; i += stride){
+    let delay = 0;
+    for (let j = i; j < Math.min(i + stride, state.frames.length); j++) delay += state.frames[j].delay;
+    frames.push({ index: i, delay });
+  }
+  return frames;
+}
+
+function estimatedExportBytes(){
+  if (!state.frames.length) return 0;
+  const { scale, colors, stride } = exportSettings();
+  const count = Math.ceil(state.frames.length / stride);
+  // The quick calibration below learns how compressible this particular GIF is.
+  const bpp = sizeModel.bytesPerPixel || .42;
+  const colorFactor = Math.pow(colors / 64, .38);
+  return Math.max(1024, Math.round(800 + state.W * scale * state.H * scale * count * bpp * colorFactor));
+}
+
+function updateSizeEstimate(){
+  const bytes = estimatedExportBytes();
+  sizeEstimate.textContent = bytes ? `About ${fmtBytes(bytes)}` : 'Calculating…';
+}
+
+async function calibrateSizeEstimator(){
+  if (!state.frames.length) return;
+  try {
+    const maxSide = Math.max(state.W, state.H);
+    const scale = Math.min(1, 180 / maxSide);
+    const W = Math.max(1, Math.round(state.W * scale)), H = Math.max(1, Math.round(state.H * scale));
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    const src = document.createElement('canvas'); src.width = state.W; src.height = state.H;
+    const sctx = src.getContext('2d');
+    const enc = GIFEncoder();
+    const sampleCount = Math.min(3, state.frames.length);
+    for (let n = 0; n < sampleCount; n++){
+      const i = sampleCount === 1 ? 0 : Math.round(n * (state.frames.length - 1) / (sampleCount - 1));
+      sctx.putImageData(state.frames[i].imageData, 0, 0);
+      ctx.drawImage(src, 0, 0, W, H);
+      const { data } = ctx.getImageData(0, 0, W, H);
+      const palette = quantize(data, 64, { format: 'rgb444' });
+      enc.writeFrame(applyPalette(data, palette, 'rgb444'), W, H, { palette, delay: state.frames[i].delay });
+      await new Promise(requestAnimationFrame);
+    }
+    enc.finish();
+    sizeModel.bytesPerPixel = Math.max(.04, (enc.bytes().length - 800) / (W * H * sampleCount));
+    updateSizeEstimate();
+  } catch (err){
+    console.warn('Could not calibrate size estimate', err);
+  }
+}
+
+sizeChoice.addEventListener('input', ()=> {
+  updateSizeEstimate();
+  $('#result').style.display = 'none';
+});
 
 // ---------- Render / encode ----------
 renderBtn.addEventListener('click', renderGif);
@@ -1309,9 +1368,8 @@ async function renderGif(){
   const progress = $('#progress'), progBar = $('#progBar'), progLbl = $('#progLbl'), result = $('#result');
   progress.style.display = 'flex'; result.style.display = 'none';
 
-  const scale = Number(scaleEl.value) / 100;
-  const speed = Number(speedEl.value);
-  const numColors = Number(colors.value);
+  const { scale, colors: numColors, stride } = exportSettings();
+  const framesToWrite = chosenFrames(stride);
   const W = Math.max(1, Math.round(state.W * scale));
   const H = Math.max(1, Math.round(state.H * scale));
 
@@ -1322,14 +1380,11 @@ async function renderGif(){
   const sctx = src.getContext('2d');
 
   const enc = GIFEncoder();
-  const matteOn = $('#matteOn').checked, matte = $('#matte').value;
-
   try {
-    for (let i = 0; i < state.frames.length; i++){
+    for (let n = 0; n < framesToWrite.length; n++){
+      const { index: i, delay } = framesToWrite[n];
       const f = state.frames[i];
-      // clear / matte
       ctx.clearRect(0,0,W,H);
-      if (matteOn){ ctx.fillStyle = matte; ctx.fillRect(0,0,W,H); }
       // draw (scaled) frame
       sctx.putImageData(f.imageData, 0, 0);
       ctx.imageSmoothingEnabled = true;
@@ -1343,12 +1398,12 @@ async function renderGif(){
       const format = numColors <= 64 ? 'rgb444' : 'rgb565';
       const palette = quantize(data, numColors, { format });
       const index = applyPalette(data, palette, format);
-      enc.writeFrame(index, W, H, { palette, delay: Math.max(20, Math.round(f.delay * speed)) });
+      enc.writeFrame(index, W, H, { palette, delay: Math.max(20, delay) });
 
-      if (i % 3 === 0 || i === state.frames.length - 1){
-        const pct = Math.round(((i+1)/state.frames.length)*100);
+      if (n % 3 === 0 || n === framesToWrite.length - 1){
+        const pct = Math.round(((n+1)/framesToWrite.length)*100);
         progBar.style.width = pct + '%';
-        progLbl.textContent = `Encoding frame ${i+1} / ${state.frames.length} (${pct}%)`;
+        progLbl.textContent = `Encoding frame ${n+1} / ${framesToWrite.length} (${pct}%)`;
         await new Promise(r => setTimeout(r, 0));
       }
     }
@@ -1358,13 +1413,7 @@ async function renderGif(){
     const url = URL.createObjectURL(blob);
     const dl = $('#dlLink'); dl.href = url; dl.download = `${state.origName}-captioned.gif`;
     $('#outSize').textContent = fmtBytes(blob.size);
-    if (state.origBytes > 0){
-      const delta = blob.size - state.origBytes;
-      const sign = delta >= 0 ? '+' : '−';
-      $('#origSize').textContent = `(was ${fmtBytes(state.origBytes)} · ${sign}${fmtBytes(Math.abs(delta))})`;
-    } else {
-      $('#origSize').textContent = '';
-    }
+    sizeEstimate.textContent = fmtBytes(blob.size);
     result.style.display = 'flex';
     progress.style.display = 'none';
     showToast('Done! Click Download.');
