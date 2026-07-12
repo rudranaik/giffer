@@ -63,7 +63,8 @@
     flex: 1; min-height: 0;
     transition: grid-template-columns .3s ease;
   }
-  .layout.editor-on { grid-template-columns: 1fr 360px; }
+  .layout.editor-on { grid-template-columns: 1fr 54px; }
+  .layout.editor-on.export-open { grid-template-columns: 1fr 360px; }
   .layout:not(.editor-on) .sidebar { visibility: hidden; }
   .stage {
     display: flex; flex-direction: column;
@@ -73,11 +74,16 @@
   .sidebar {
     border-left: 1px solid var(--border);
     background: var(--panel);
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 16px;
+    overflow: hidden;
+    padding: 0;
     min-width: 0;
+    display: flex; flex-direction: column;
   }
+  .export-toggle { flex: none; min-height: 48px; border: 0; border-bottom: 1px solid var(--border); background: var(--panel); color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .4px; }
+  .export-toggle:hover { background: var(--accent-soft); }
+  .export-content { padding: 16px; overflow-y: auto; }
+  .layout.editor-on:not(.export-open) .export-toggle { height: 100%; border-bottom: 0; writing-mode: vertical-rl; transform: rotate(180deg); }
+  .layout.editor-on:not(.export-open) .export-content { display: none; }
   /* Drop zone */
   #dropzone {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -95,6 +101,14 @@
   .canvas-wrap {
     display: none; flex-direction: column; align-items: center; gap: 12px;
   }
+  .editor-preview {
+    position: sticky; top: 0; z-index: 4;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    width: 100%; padding: 2px 0 12px;
+    background: var(--bg);
+  }
+  .editor-controls { width: 100%; max-width: 720px; }
+  .stage.editor-scrolled .editor-preview { box-shadow: 0 10px 18px -18px rgba(43,36,56,.55); }
   .canvas-frame {
     position: relative;
     background:
@@ -110,8 +124,30 @@
     line-height: 0;
     max-width: 100%;
   }
-  #view { max-width: 100%; max-height: 62vh; border-radius: var(--radius); cursor: grab; touch-action: none; }
+  #view { max-width: 100%; max-height: 62vh; border-radius: var(--radius); cursor: grab; touch-action: none; transition: max-height .2s ease; }
+  .stage.editor-scrolled #view { max-height: 46vh; }
   #view.dragging { cursor: grabbing; }
+  .wm-editor { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .wm-selection { position: absolute; display: none; border: 2px solid transparent; border-radius: 5px; box-shadow: none; pointer-events: auto; cursor: grab; transition: border-color .14s, box-shadow .14s; }
+  .wm-selection:hover, .wm-selection:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 2px 8px rgba(43,36,56,.28); }
+  .wm-selection:active { cursor: grabbing; }
+  .wm-resize { position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 1px 4px rgba(43,36,56,.35); cursor: nwse-resize; opacity: 0; pointer-events: none; transition: opacity .14s; }
+  .wm-selection:hover .wm-resize, .wm-resize:focus-visible { opacity: 1; pointer-events: auto; }
+  .wm-crop { position: absolute; z-index: 3; left: -7px; bottom: -7px; width: 24px; height: 24px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: var(--pop); color: #fff; box-shadow: 0 1px 4px rgba(43,36,56,.35); cursor: pointer; font-size: 12px; line-height: 1; opacity: 0; pointer-events: none; transition: opacity .14s, transform .14s; }
+  .wm-selection:hover .wm-crop, .wm-crop:focus-visible, .wm-selection.crop-mode .wm-crop { opacity: 1; pointer-events: auto; }
+  .wm-selection.crop-mode { border-color: var(--pop); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 2px 8px rgba(43,36,56,.28); }
+  .wm-selection.crop-mode .wm-crop { background: var(--accent); transform: none; }
+  .wm-selection.crop-mode .wm-resize, .wm-selection.crop-mode .wm-opacity { display: none; }
+  .wm-crop-area { position: absolute; inset: 0; display: none; overflow: hidden; pointer-events: none; }
+  .wm-selection.crop-mode .wm-crop-area { display: block; }
+  .wm-crop-frame { position: absolute; border: 2px dashed var(--pop); box-shadow: 0 0 0 999px rgba(43,36,56,.4); pointer-events: auto; }
+  .wm-crop-h { position: absolute; width: 12px; height: 12px; padding: 0; border: 2px solid #fff; border-radius: 2px; background: var(--pop); box-shadow: 0 1px 4px rgba(43,36,56,.35); }
+  .wm-crop-h.nw { left: -7px; top: -7px; cursor: nwse-resize; }.wm-crop-h.ne { right: -7px; top: -7px; cursor: nesw-resize; }.wm-crop-h.sw { left: -7px; bottom: -7px; cursor: nesw-resize; }.wm-crop-h.se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+  .wm-crop-hint { position: absolute; z-index: 4; left: 50%; top: calc(100% + 12px); display: none; width: max-content; padding: 6px 8px; border-radius: 7px; background: var(--text); color: #fff; font-size: 10px; line-height: 1; transform: translateX(-50%); pointer-events: none; }
+  .wm-selection.crop-mode .wm-crop-hint { display: block; }
+  .wm-opacity { position: absolute; left: 50%; bottom: calc(100% - 2px); display: flex; align-items: center; gap: 6px; width: 142px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.97); box-shadow: 0 5px 16px rgba(43,36,56,.18); font-size: 11px; color: var(--muted); line-height: 1; transform: translateX(-50%) translateY(3px); opacity: 0; pointer-events: none; transition: opacity .14s, transform .14s; }
+  .wm-opacity input { flex: 1; min-width: 0; }
+  .wm-selection:hover .wm-opacity, .wm-opacity:focus-within { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
   /* Transport */
   .transport { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 720px; }
   .transport button.play {
@@ -303,8 +339,11 @@
   .preset-row .btn { padding: 5px 11px; font-size: 12px; }
   @media (max-width: 700px) {
     header .sub { max-width: 44vw; overflow: hidden; text-overflow: ellipsis; }
-    .layout.editor-on { grid-template-columns: 1fr; }
+    .layout.editor-on { grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) 48px; }
+    .layout.editor-on.export-open { grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) minmax(220px,38vh); }
     .layout.editor-on .sidebar { border-left: 0; border-top: 1px solid var(--border); }
+    .layout.editor-on:not(.export-open) .export-toggle { writing-mode: horizontal-tb; transform: none; }
+    #view, .stage.editor-scrolled #view { max-height: 42vh; }
   }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: #d9cdec; border-radius: 6px; }
@@ -335,17 +374,36 @@
     </div>
 
     <div class="canvas-wrap" id="canvasWrap">
-      <div class="canvas-frame">
-        <canvas id="view"></canvas>
+      <div class="editor-preview">
+        <div class="canvas-frame">
+          <canvas id="view"></canvas>
+          <div class="wm-editor" id="wmEditor" aria-label="Selected watermark controls">
+            <div class="wm-selection" id="wmSelection">
+              <div class="wm-opacity"><span>Opacity</span><input type="range" id="wmOpacity" min="0.05" max="1" step="0.05" aria-label="Watermark opacity"></div>
+              <button class="wm-crop" id="wmCrop" type="button" aria-label="Crop watermark" title="Crop watermark">✂</button>
+              <div class="wm-crop-hint">Click ✓ to apply · Esc to cancel</div>
+              <button class="wm-resize" id="wmResize" type="button" aria-label="Resize watermark"></button>
+              <div class="wm-crop-area" id="wmCropArea">
+                <div class="wm-crop-frame" id="wmCropFrame">
+                  <button class="wm-crop-h nw" data-crop-corner="nw" type="button" aria-label="Adjust top-left crop corner"></button>
+                  <button class="wm-crop-h ne" data-crop-corner="ne" type="button" aria-label="Adjust top-right crop corner"></button>
+                  <button class="wm-crop-h sw" data-crop-corner="sw" type="button" aria-label="Adjust bottom-left crop corner"></button>
+                  <button class="wm-crop-h se" data-crop-corner="se" type="button" aria-label="Adjust bottom-right crop corner"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="transport">
+          <button class="play" id="playBtn" title="Play / Pause (space)">▶</button>
+          <input type="range" id="scrub" min="0" max="1000" value="0" />
+          <span class="time" id="timeLbl">0.00s / 0.00s</span>
+        </div>
+        <div class="timeline" id="timeline"></div>
+        <div class="meta" id="gifMeta"></div>
       </div>
-      <div class="transport">
-        <button class="play" id="playBtn" title="Play / Pause (space)">▶</button>
-        <input type="range" id="scrub" min="0" max="1000" value="0" />
-        <span class="time" id="timeLbl">0.00s / 0.00s</span>
-      </div>
-      <div class="timeline" id="timeline"></div>
-      <div class="meta" id="gifMeta"></div>
 
+      <div class="editor-controls">
       <div class="captions-panel">
         <div class="section-title">Clips</div>
         <button class="btn primary block" id="addCard" disabled>＋ Add title card at playhead</button>
@@ -369,6 +427,7 @@
         <div class="cap-list" id="watermarkList" style="margin-top:12px">
           <div class="empty-hint">Overlay a logo or image throughout the finished GIF.</div>
         </div>
+      </div>
       </div>
     </div>
 
@@ -514,6 +573,8 @@
 
   <!-- SIDEBAR -->
   <div class="sidebar">
+    <button class="export-toggle" id="exportToggle" type="button" aria-expanded="false">Export GIF</button>
+    <div class="export-content">
     <div class="section-title">Export</div>
     <div class="export-row">
       <div class="size-picker">
@@ -535,6 +596,7 @@
         <div class="size">Download size: <b id="outSize">–</b></div>
         <button class="btn primary block" id="saveBtn">💾 Save GIF</button>
       </div>
+    </div>
     </div>
   </div>
 </div>
@@ -572,6 +634,7 @@ const FONTS = ['Fredoka','Anton','Impact','Bangers','Oswald','Pacifico','Roboto'
 
 // ---------- Elements ----------
 const $ = s => document.querySelector(s);
+const layout = document.querySelector('.layout');
 const dropzone = $('#dropzone'), fileInput = $('#fileInput');
 const uploadBtn = $('#uploadBtn');
 const fileName = $('#fileName'), saveBtn = $('#saveBtn');
@@ -629,18 +692,31 @@ async function saveGif(){
 }
 
 saveBtn.addEventListener('click', saveGif);
+const stage = document.querySelector('.stage');
 const canvasWrap = $('#canvasWrap'), view = $('#view'), vctx = view.getContext('2d');
 const playBtn = $('#playBtn'), scrub = $('#scrub'), timeLbl = $('#timeLbl');
 const timeline = $('#timeline'), gifMeta = $('#gifMeta');
 const addCap = $('#addCap'), capList = $('#capList');
 const addCard = $('#addCard'), cardList = $('#cardList');
 const addWatermark = $('#addWatermark'), watermarkInput = $('#watermarkInput'), watermarkList = $('#watermarkList');
+const wmSelection = $('#wmSelection'), wmResize = $('#wmResize'), wmOpacity = $('#wmOpacity');
+const wmCrop = $('#wmCrop'), wmCropFrame = $('#wmCropFrame');
 const renderBtn = $('#renderBtn'), newBtn = $('#newBtn'), backToReviewBtn = $('#backToReviewBtn');
+const exportToggle = $('#exportToggle');
 const toast = $('#toast');
 
 // ---------- Toast ----------
 let toastT;
 function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>toast.classList.remove('show'), 2600); }
+
+function setExportDrawer(open){
+  layout.classList.toggle('export-open', open);
+  exportToggle.setAttribute('aria-expanded', String(open));
+  exportToggle.textContent = open ? 'Hide export' : 'Export GIF';
+}
+exportToggle.addEventListener('click', () => setExportDrawer(!layout.classList.contains('export-open')));
+
+stage.addEventListener('scroll', () => stage.classList.toggle('editor-scrolled', stage.scrollTop > 18), { passive: true });
 
 // ---------- File loading ----------
 dropzone.addEventListener('click', e => { if (!e.target.closest('button')) fileInput.click(); });
@@ -680,7 +756,8 @@ function enterEditor(metaText){
   recordWrap.style.display = 'none';
   reviewWrap.style.display = 'none';
   canvasWrap.style.display = 'flex';
-  document.querySelector('.layout').classList.add('editor-on');
+  layout.classList.add('editor-on');
+  setExportDrawer(false);
   newBtn.style.display = 'inline-block';
   // Recordings retain their source footage, so offer a way back to re-crop / re-adjust the window.
   backToReviewBtn.style.display = rv.frames.length ? 'inline-block' : 'none';
@@ -735,6 +812,7 @@ function drawAt(ms){
   const t = ((ms % state.duration) + state.duration) % state.duration;
   if (!state.frames[idx].cardId) for (const cap of state.captions) drawCaption(vctx, cap, t, state.W, state.H, 1);
   for(const wm of state.watermarks)drawWatermark(vctx,wm,state.W,state.H);
+  positionWatermarkEditor();
   scrub.value = String(Math.round(t));
   timeLbl.textContent = `${(t/1000).toFixed(2)}s / ${(state.duration/1000).toFixed(2)}s`;
   movePlayheads(t);
@@ -893,20 +971,53 @@ function renderCardList(){
 addCard.addEventListener('click', addTitleCard);
 
 // ---------- Watermarks ----------
+let activeWatermarkId = null;
+let watermarkCrop = null;
+const fullCrop = () => ({ x: 0, y: 0, w: 1, h: 1 });
+function watermarkCropValue(wm){ return wm.crop || fullCrop(); }
+function watermarkBox(wm){
+  const crop = watermarkCropValue(wm);
+  const w = wm.scale;
+  return { w, h: w * (wm.image.naturalHeight * crop.h / (wm.image.naturalWidth * crop.w)) * (state.W / state.H) };
+}
+function activeWatermark(){ return state.watermarks.find(wm => wm.id === activeWatermarkId); }
+function positionWatermarkEditor(){
+  const wm = activeWatermark();
+  if (!wm?.image){ wmSelection.style.display = 'none'; return; }
+  const { w, h } = watermarkBox(wm);
+  wmSelection.style.display = 'block';
+  wmSelection.style.left = `${(wm.x - w / 2) * 100}%`;
+  wmSelection.style.top = `${(wm.y - h / 2) * 100}%`;
+  wmSelection.style.width = `${w * 100}%`;
+  wmSelection.style.height = `${h * 100}%`;
+  wmOpacity.value = String(wm.opacity);
+  const isCropping = watermarkCrop?.watermark === wm;
+  wmSelection.classList.toggle('crop-mode', isCropping);
+  wmCrop.textContent = isCropping ? '✓' : '✂';
+  wmCrop.title = isCropping ? 'Apply crop' : 'Crop watermark';
+  wmCrop.setAttribute('aria-label', isCropping ? 'Apply crop' : 'Crop watermark');
+  if (isCropping){
+    const r = watermarkCrop.rect;
+    wmCropFrame.style.left = `${r.x * 100}%`; wmCropFrame.style.top = `${r.y * 100}%`;
+    wmCropFrame.style.width = `${r.w * 100}%`; wmCropFrame.style.height = `${r.h * 100}%`;
+  }
+}
 function drawWatermark(ctx,wm,W,H){
   if(!wm.image)return;
-  const w=W*wm.scale,h=w*(wm.image.naturalHeight/wm.image.naturalWidth);
+  const crop = watermarkCropValue(wm);
+  const w=W*wm.scale,h=w*(wm.image.naturalHeight*crop.h/(wm.image.naturalWidth*crop.w));
   ctx.save();ctx.globalAlpha=wm.opacity;ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(wm.image,wm.x*W-w/2,wm.y*H-h/2,w,h);ctx.restore();
+  ctx.drawImage(wm.image,wm.image.naturalWidth*crop.x,wm.image.naturalHeight*crop.y,wm.image.naturalWidth*crop.w,wm.image.naturalHeight*crop.h,wm.x*W-w/2,wm.y*H-h/2,w,h);ctx.restore();
 }
 function loadWatermarkFile(file,existing){
   if(!file)return;
   const img=new Image(),url=URL.createObjectURL(file);
   img.onload=()=>{
     URL.revokeObjectURL(url);
-    if(existing){existing.name=file.name;existing.image=img;}
-    else state.watermarks.push({id:++watermarkSeq,name:file.name,image:img,x:.84,y:.86,scale:.18,opacity:.65});
-    renderWatermarkList();drawAt(Number(scrub.value));showToast(existing?'Watermark replaced':'Watermark added — drag it on the preview');
+    if(existing){existing.name=file.name;existing.image=img;existing.crop=fullCrop();}
+    else { const wm = {id:++watermarkSeq,name:file.name,image:img,x:.84,y:.86,scale:.18,opacity:.65,crop:fullCrop()}; state.watermarks.push(wm); activeWatermarkId = wm.id; }
+    if (existing) activeWatermarkId = existing.id;
+    renderWatermarkList();drawAt(Number(scrub.value));showToast(existing?'Watermark replaced':'Watermark added — drag it to move, use its corner to resize');
   };
   img.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not read that watermark image');};
   img.src=url;
@@ -921,13 +1032,11 @@ function renderWatermarkList(){
     const el=document.createElement('div');el.className='cap-card';el.dataset.watermarkId=wm.id;
     el.innerHTML=`<div class="cap-head"><span class="dot"></span><span class="name">◈ ${escapeHtml(wm.name)}</span><button class="more" title="Watermark controls">⋯</button><button class="del" title="Delete watermark">✕</button></div>
       <div class="cap-body"><div class="asset-row"><input type="file" accept="image/png,image/jpeg,image/webp,image/gif"><button class="btn replace">Replace image</button><span class="asset-name">${escapeHtml(wm.name)}</span></div>
-      <div class="cap-style"><div class="divider" style="margin:2px 0"></div><div class="row2"><div class="field"><label>Size (${Math.round(wm.scale*100)}%)</label><input type="range" data-wm-k="scale" min="0.03" max="1" step="0.01" value="${wm.scale}"></div><div class="field"><label>Opacity (${Math.round(wm.opacity*100)}%)</label><input type="range" data-wm-k="opacity" min="0.05" max="1" step="0.05" value="${wm.opacity}"></div></div><div class="row2"><div class="field"><label>Horizontal position</label><input type="range" data-wm-k="x" min="0" max="1" step="0.01" value="${wm.x}"></div><div class="field"><label>Vertical position</label><input type="range" data-wm-k="y" min="0" max="1" step="0.01" value="${wm.y}"></div></div></div>
-      <div class="meta">Visible throughout the GIF. Drag it directly on the preview to position it.</div></div>`;
+      <div class="meta">Visible throughout the GIF. Select it on the preview to move it, drag its corner to resize, or hover it to set opacity.</div></div>`;
     el.querySelector('.cap-head').addEventListener('click',e=>{if(e.target.closest('button'))return;el.classList.toggle('open');});
     el.querySelector('.more').addEventListener('click',()=>{el.classList.add('open');el.classList.toggle('style-open');});
-    el.querySelector('.del').addEventListener('click',()=>{state.watermarks=state.watermarks.filter(x=>x.id!==wm.id);renderWatermarkList();drawAt(Number(scrub.value));});
+    el.querySelector('.del').addEventListener('click',()=>{state.watermarks=state.watermarks.filter(x=>x.id!==wm.id);if(activeWatermarkId===wm.id)activeWatermarkId=null;if(watermarkCrop?.watermark===wm)watermarkCrop=null;renderWatermarkList();drawAt(Number(scrub.value));});
     const file=el.querySelector('input[type=file]');el.querySelector('.replace').addEventListener('click',()=>file.click());file.addEventListener('change',()=>loadWatermarkFile(file.files[0],wm));
-    el.querySelectorAll('[data-wm-k]').forEach(input=>input.addEventListener('input',()=>{wm[input.dataset.wmK]=Number(input.value);if(input.dataset.wmK==='scale')input.closest('.field').querySelector('label').textContent=`Size (${Math.round(wm.scale*100)}%)`;if(input.dataset.wmK==='opacity')input.closest('.field').querySelector('label').textContent=`Opacity (${Math.round(wm.opacity*100)}%)`;drawAt(Number(scrub.value));}));
     watermarkList.appendChild(el);
   });
 }
@@ -1272,32 +1381,110 @@ function captionAt(pt, t){
 }
 function watermarkAt(pt){
   for(let i=state.watermarks.length-1;i>=0;i--){
-    const wm=state.watermarks[i],w=wm.scale,h=w*(wm.image.naturalHeight/wm.image.naturalWidth)*(state.W/state.H);
+    const wm=state.watermarks[i],{w,h}=watermarkBox(wm);
     if(Math.abs(pt.x-wm.x)<=w/2&&Math.abs(pt.y-wm.y)<=h/2)return wm;
   }
   return null;
+}
+function startWatermarkDrag(wm, e){
+  const pt = canvasPoint(e);
+  activeWatermarkId = wm.id;
+  dragging = { watermark: wm, offx: pt.x - wm.x, offy: pt.y - wm.y, pointerId: e.pointerId };
+  view.classList.add('dragging');
+  pause();
+  positionWatermarkEditor();
 }
 view.addEventListener('pointerdown', e => {
   const t = ((Number(scrub.value)) % state.duration + state.duration) % state.duration;
   const pt = canvasPoint(e);
   const wm=watermarkAt(pt);
-  if(wm){dragging={watermark:wm,offx:pt.x-wm.x,offy:pt.y-wm.y};view.classList.add('dragging');view.setPointerCapture(e.pointerId);pause();return;}
+  if(wm){startWatermarkDrag(wm,e);view.setPointerCapture(e.pointerId);return;}
   const frame = state.frames[frameIndexAt(t)];
   const card = frame.cardId ? state.cards.find(x => x.id === frame.cardId) : null;
-  if (card?.asset){ dragging = { card, offx: pt.x - card.asset.x, offy: pt.y - card.asset.y }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); return; }
+  if (card?.asset){ dragging = { card, offx: pt.x - card.asset.x, offy: pt.y - card.asset.y, pointerId: e.pointerId }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); return; }
   const c = captionAt(pt, t);
-  if (c){ dragging = { cap: c, offx: pt.x - c.x, offy: pt.y - c.y }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); }
+  if (c){ dragging = { cap: c, offx: pt.x - c.x, offy: pt.y - c.y, pointerId: e.pointerId }; view.classList.add('dragging'); view.setPointerCapture(e.pointerId); pause(); }
 });
-view.addEventListener('pointermove', e => {
-  if (!dragging) return;
+function movePreviewDrag(e){
+  if (!dragging || dragging.pointerId !== e.pointerId) return;
   const pt = canvasPoint(e);
+  if (dragging.crop){
+    const d = dragging.cropState, r = { ...d.rect }, min = .08;
+    const px = Math.max(0, Math.min(1, (pt.x - d.left) / d.w));
+    const py = Math.max(0, Math.min(1, (pt.y - d.top) / d.h));
+    if (dragging.corner.includes('n')) { const bottom = r.y + r.h; r.y = Math.min(py, bottom - min); r.h = bottom - r.y; }
+    if (dragging.corner.includes('s')) r.h = Math.max(min, py - r.y);
+    if (dragging.corner.includes('w')) { const right = r.x + r.w; r.x = Math.min(px, right - min); r.w = right - r.x; }
+    if (dragging.corner.includes('e')) r.w = Math.max(min, px - r.x);
+    watermarkCrop.rect = r;
+    positionWatermarkEditor();
+    return;
+  }
+  if (dragging.resize){
+    const nextScale = Math.max(0.03, Math.min(1, Math.max(pt.x - dragging.anchorX, (pt.y - dragging.anchorY) / dragging.ratio)));
+    dragging.watermark.scale = nextScale;
+    dragging.watermark.x = Math.max(0, Math.min(1, dragging.anchorX + nextScale / 2));
+    dragging.watermark.y = Math.max(0, Math.min(1, dragging.anchorY + nextScale * dragging.ratio / 2));
+    drawAt(Number(scrub.value));
+    return;
+  }
   const target = dragging.watermark || (dragging.card ? dragging.card.asset : dragging.cap);
   target.x = Math.max(0, Math.min(1, pt.x - dragging.offx));
   target.y = Math.max(0, Math.min(1, pt.y - dragging.offy));
   if (dragging.card){ const i = cardFrameIndex(dragging.card.id); state.frames[i].imageData = cardImageData(dragging.card); }
   drawAt(Number(scrub.value));
+}
+function finishPreviewDrag(e){ if (dragging && dragging.pointerId === e.pointerId){ dragging = null; view.classList.remove('dragging'); } }
+document.addEventListener('pointermove', movePreviewDrag);
+document.addEventListener('pointerup', finishPreviewDrag);
+document.addEventListener('pointercancel', finishPreviewDrag);
+
+wmSelection.addEventListener('pointerdown', e => {
+  if (e.target.closest('.wm-resize, .wm-opacity, .wm-crop, .wm-crop-area')) return;
+  const wm = activeWatermark(); if (!wm) return;
+  e.preventDefault(); e.stopPropagation();
+  startWatermarkDrag(wm, e);
 });
-view.addEventListener('pointerup', e => { if (dragging){ dragging = null; view.classList.remove('dragging'); } });
+wmResize.addEventListener('pointerdown', e => {
+  const wm = activeWatermark(); if (!wm) return;
+  e.preventDefault(); e.stopPropagation();
+  const { w, h } = watermarkBox(wm);
+  dragging = { watermark: wm, resize: true, pointerId: e.pointerId, anchorX: wm.x - w / 2, anchorY: wm.y - h / 2, ratio: h / w };
+  pause();
+});
+wmOpacity.addEventListener('input', () => { const wm = activeWatermark(); if (wm){ wm.opacity = Number(wmOpacity.value); drawAt(Number(scrub.value)); } });
+wmCrop.addEventListener('click', () => {
+  const wm = activeWatermark(); if (!wm) return;
+  if (watermarkCrop?.watermark === wm){
+    const base = watermarkCrop.base, r = watermarkCrop.rect;
+    const before = watermarkBox(wm);
+    wm.x += (r.x + r.w / 2 - .5) * before.w;
+    wm.y += (r.y + r.h / 2 - .5) * before.h;
+    wm.scale *= r.w;
+    wm.crop = { x: base.x + r.x * base.w, y: base.y + r.y * base.h, w: r.w * base.w, h: r.h * base.h };
+    watermarkCrop = null;
+    drawAt(Number(scrub.value));
+    showToast('Watermark cropped');
+  } else {
+    watermarkCrop = { watermark: wm, base: { ...watermarkCropValue(wm) }, rect: fullCrop() };
+    positionWatermarkEditor();
+    showToast('Drag a crop corner, then click ✂ to apply');
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && watermarkCrop){
+    watermarkCrop = null;
+    dragging = null;
+    positionWatermarkEditor();
+    showToast('Crop cancelled');
+  }
+});
+document.querySelectorAll('.wm-crop-h').forEach(handle => handle.addEventListener('pointerdown', e => {
+  const wm = activeWatermark(); if (!wm || watermarkCrop?.watermark !== wm) return;
+  e.preventDefault(); e.stopPropagation();
+  const { w, h } = watermarkBox(wm);
+  dragging = { crop: true, pointerId: e.pointerId, corner: handle.dataset.cropCorner, cropState: { rect: { ...watermarkCrop.rect }, left: wm.x - w / 2, top: wm.y - h / 2, w, h } };
+}));
 
 // ---------- Timeline ----------
 function renderTimeline(){
@@ -1521,7 +1708,8 @@ function showScreen(which){
   reviewWrap.style.display = which === 'review' ? 'flex' : 'none';
   canvasWrap.style.display = which === 'editor' ? 'flex' : 'none';
   // The Export sidebar only matters once there's something to render & save
-  document.querySelector('.layout').classList.toggle('editor-on', which === 'editor');
+  layout.classList.toggle('editor-on', which === 'editor');
+  if (which !== 'editor') setExportDrawer(false);
 }
 
 recordBtn.addEventListener('click', e => { e.stopPropagation(); openRecorder(); });
