@@ -65,6 +65,5 @@ EOF
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
-  --ask-for-approval never \
   --cd "$workspace" \
   - <"$prompt_file"
