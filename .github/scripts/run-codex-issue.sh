@@ -64,6 +64,6 @@ EOF
 
 codex exec \
   --ephemeral \
-  --sandbox workspace-write \
+  --sandbox danger-full-access \
   --cd "$workspace" \
   - <"$prompt_file"
