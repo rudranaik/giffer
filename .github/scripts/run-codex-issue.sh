@@ -3,6 +3,10 @@
 # This script runs only on the local, self-hosted GitHub Actions runner.
 set -euo pipefail
 
+# A launchd user agent starts with a deliberately small PATH. The Codex desktop
+# app and Homebrew both install their CLIs outside the macOS system paths.
+export PATH="/opt/homebrew/bin:/usr/local/bin:/Applications/ChatGPT.app/Contents/Resources:${PATH}"
+
 issue_number="${1:?Usage: run-codex-issue.sh ISSUE_NUMBER}"
 repository="${GITHUB_REPOSITORY:?This script must run in GitHub Actions.}"
 workspace="${GITHUB_WORKSPACE:-$PWD}"

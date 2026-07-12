@@ -7,6 +7,7 @@ repository="${1:-rudranaik/giffer}"
 runner_home="${RUNNER_HOME:-$HOME/.local/share/actions-runner-giffer}"
 runner_name="${RUNNER_NAME:-$(scutil --get ComputerName | tr ' ' '-' | tr '[:upper:]' '[:lower:]')-codex-giffer}"
 uid="$(id -u)"
+user="$(id -un)"
 plist="$HOME/Library/LaunchAgents/com.github.${repository//\//-}.codex-runner.plist"
 
 case "$(uname -m)" in
@@ -40,21 +41,28 @@ if [[ ! -x "$runner_home/config.sh" ]]; then
   fi
 
   archive="$runner_home/$asset"
-  curl --fail --location --show-error --silent "$asset_url" --output "$archive"
+  if [[ -f "$archive" ]] && ! printf '%s  %s\n' "$digest" "$archive" | shasum -a 256 --check --status; then
+    rm -f "$archive"
+  fi
+  if [[ ! -f "$archive" ]]; then
+    curl --fail --location --show-error --silent "$asset_url" --output "$archive"
+  fi
   printf '%s  %s\n' "$digest" "$archive" | shasum -a 256 --check --status
   tar xzf "$archive" -C "$runner_home"
   rm -f "$archive"
 fi
 
-registration_token="$(gh api --method POST "repos/${repository}/actions/runners/registration-token" --jq .token)"
-"$runner_home/config.sh" \
-  --unattended \
-  --replace \
-  --url "https://github.com/${repository}" \
-  --token "$registration_token" \
-  --name "$runner_name" \
-  --labels "codex,giffer" \
-  --work "_work"
+if [[ ! -f "$runner_home/.runner" ]]; then
+  registration_token="$(gh api --method POST "repos/${repository}/actions/runners/registration-token" --jq .token)"
+  "$runner_home/config.sh" \
+    --unattended \
+    --replace \
+    --url "https://github.com/${repository}" \
+    --token "$registration_token" \
+    --name "$runner_name" \
+    --labels "codex,giffer" \
+    --work "_work"
+fi
 
 cat >"$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -65,6 +73,12 @@ cat >"$plist" <<EOF
   <key>ProgramArguments</key>
   <array><string>/bin/bash</string><string>${runner_home}/run.sh</string></array>
   <key>WorkingDirectory</key><string>${runner_home}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key><string>${HOME}</string>
+    <key>USER</key><string>${user}</string>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/Applications/ChatGPT.app/Contents/Resources:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ProcessType</key><string>Background</string>
