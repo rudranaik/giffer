@@ -521,14 +521,19 @@
         <input type="range" id="sizeChoice" min="0" max="100" step="1" value="55" aria-label="Choose download file size" />
         <div class="size-ends"><span>Smaller file</span><span>Sharper GIF</span></div>
       </div>
-      <button class="btn accent block" id="renderBtn" disabled>⬇ Render &amp; Save GIF</button>
+      <div class="field">
+        <label for="fileName">GIF filename</label>
+        <input type="text" id="fileName" value="captioned.gif" autocomplete="off" spellcheck="false" />
+        <div class="meta">Your browser will ask where to save it when supported.</div>
+      </div>
+      <button class="btn accent block" id="renderBtn" disabled>⬇ Render GIF</button>
       <div id="progress">
         <div class="bar"><i id="progBar"></i></div>
         <div class="meta" id="progLbl">Rendering…</div>
       </div>
       <div id="result">
         <div class="size">Download size: <b id="outSize">–</b></div>
-        <a class="dl" id="dlLink"><button class="btn primary block">💾 Download GIF</button></a>
+        <button class="btn primary block" id="saveBtn">💾 Save GIF</button>
       </div>
     </div>
   </div>
@@ -557,6 +562,7 @@ const state = {
   watermarks: [],
   origBytes: 0,
   origName: 'caption',
+  renderedBlob: null,
 };
 let capSeq = 0;
 let cardSeq = 0;
@@ -568,6 +574,61 @@ const FONTS = ['Fredoka','Anton','Impact','Bangers','Oswald','Pacifico','Roboto'
 const $ = s => document.querySelector(s);
 const dropzone = $('#dropzone'), fileInput = $('#fileInput');
 const uploadBtn = $('#uploadBtn');
+const fileName = $('#fileName'), saveBtn = $('#saveBtn');
+
+function gifFileName(name){
+  const trimmed = name.trim().replace(/[/\\]/g, '-');
+  if (!trimmed) return 'captioned.gif';
+  return /\.gif$/i.test(trimmed) ? trimmed : `${trimmed}.gif`;
+}
+
+function setDefaultFileName(){
+  fileName.value = `${state.origName || 'caption'}-captioned.gif`;
+}
+
+function downloadWithBrowser(filename){
+  const url = URL.createObjectURL(state.renderedBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function saveGif(){
+  if (!state.renderedBlob) return;
+  const filename = gifFileName(fileName.value);
+  fileName.value = filename;
+
+  if (typeof window.showSaveFilePicker !== 'function') {
+    downloadWithBrowser(filename);
+    return;
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{ description: 'GIF image', accept: { 'image/gif': ['.gif'] } }],
+    });
+    const writable = await handle.createWritable();
+    await writable.write(state.renderedBlob);
+    await writable.close();
+    showToast(`Saved ${filename}`);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      showToast('Save canceled.');
+      return;
+    }
+    console.error(err);
+    downloadWithBrowser(filename);
+    showToast('Using your browser download instead.');
+  }
+}
+
+saveBtn.addEventListener('click', saveGif);
 const canvasWrap = $('#canvasWrap'), view = $('#view'), vctx = view.getContext('2d');
 const playBtn = $('#playBtn'), scrub = $('#scrub'), timeLbl = $('#timeLbl');
 const timeline = $('#timeline'), gifMeta = $('#gifMeta');
@@ -597,6 +658,8 @@ async function loadFile(file){
     const buf = await file.arrayBuffer();
     state.origBytes = buf.byteLength;
     state.origName = file.name.replace(/\.gif$/i,'') || 'caption';
+    state.renderedBlob = null;
+    setDefaultFileName();
     const gif = parseGIF(buf);
     const raw = decompressFrames(gif, true);
     if (!raw.length) throw new Error('No frames found');
@@ -1409,14 +1472,12 @@ async function renderGif(){
     }
     enc.finish();
     const bytes = enc.bytes();
-    const blob = new Blob([bytes], { type: 'image/gif' });
-    const url = URL.createObjectURL(blob);
-    const dl = $('#dlLink'); dl.href = url; dl.download = `${state.origName}-captioned.gif`;
-    $('#outSize').textContent = fmtBytes(blob.size);
-    sizeEstimate.textContent = fmtBytes(blob.size);
+    state.renderedBlob = new Blob([bytes], { type: 'image/gif' });
+    $('#outSize').textContent = fmtBytes(state.renderedBlob.size);
+    sizeEstimate.textContent = fmtBytes(state.renderedBlob.size);
     result.style.display = 'flex';
     progress.style.display = 'none';
-    showToast('Done! Click Download.');
+    showToast('Done! Choose where to save your GIF.');
   } catch (err){
     console.error(err);
     showToast('Render failed: ' + err.message);
@@ -2179,7 +2240,8 @@ function applyRecording(){
   state.W = outW; state.H = outH; state.frames = outFrames;
   state.starts = []; let t = 0;
   for (const f of outFrames){ state.starts.push(t); t += f.delay; }
-  state.duration = t; state.origBytes = 0; state.origName = 'recording';
+  state.duration = t; state.origBytes = 0; state.origName = 'recording'; state.renderedBlob = null;
+  setDefaultFileName();
   // Keep rv.frames / rv.path so "Adjust recording" can return here; captions (if any) are preserved.
 
   renderCapList(); renderTimeline();
